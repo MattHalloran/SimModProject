@@ -1,9 +1,10 @@
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
  * 
- * @author
+ * @author Matt Halloran
  *
  */
 public class SimLib {
@@ -11,12 +12,13 @@ public class SimLib {
 	private int next_event_type, maxatr = 0, maxlist = 0;
 	
 	//The simulation clock, updated by simlib function timing 
-	private double sim_time;//  *transfer;
+	private double sim_time;
 	
 	private float[] prob_distrib = new float[26];
 	
 	private ArrayList<LinkedList<Double>> eventLists;
 	private int[] list_rank;
+	private int[] transfer;
 	
 	private static int MODLUS = 2147483647, MULT1 = 24112, MULT2 = 26143;
 	
@@ -74,6 +76,7 @@ public class SimLib {
 	
 	    eventLists = new ArrayList<LinkedList<Double>>();
 	    list_rank = new int[maxlist];
+	    transfer = new int[maxatr+1];
 	    
 	    // Initialize list attributes
 	    for(int i = 0; i < maxlist; i++) {
@@ -195,7 +198,7 @@ public class SimLib {
 	    int   i;
 	    double u = lcgrand(index);
 	
-	    for (i = 1; u >= prob_distrib[i]; ++i)
+	    for (i = 0; u > prob_distrib[i]; i++)
 	        ;
 	    return i;
 	}
@@ -215,7 +218,8 @@ public class SimLib {
 	 */
 	private void insertInQueue(Object obj, int option, int queueNum) 
 	{
-		    int item, postest;
+		    int item;
+		    boolean postest;
 		
 		    // If the list value is improper, stop the simulation
 		    if(!((queueNum >= 0) && (queueNum <= MAX_LIST))) {
@@ -248,7 +252,7 @@ public class SimLib {
 		            }		
 		            // Search for the correct location
 		            if (option == INCREASING) {
-//		                postest = (transfer[item] >= (*row).value[item]);
+		                postest = (transfer[item] >= list_rank[item]);
 //		                while (postest) {
 //		                    behind  = row;
 //		                    row     = (*row).sr;
@@ -272,10 +276,10 @@ public class SimLib {
 		            }
 		            
 		            // Check to see if position is first or last.  If so, take care of it below
-		            if (row == head[list])
-		                option = FIRST;
-		            else
-		            {
+//		            if (row == head[list])
+//		                option = FIRST;
+//		            else
+//		            {
 //		                if (behind == tail[list])
 //		                    option = LAST;
 //		                else { // Insert between preceding and succeeding records
@@ -288,7 +292,7 @@ public class SimLib {
 //		                    (*ahead).pr  = row;
 //		                    (*row).sr    = ahead;
 //		                }
-		            }
+//		            }
 		        } // End of inserting in increasing or decreasing order
 		        if (option == FIRST) 
 		        {
@@ -325,49 +329,43 @@ public class SimLib {
 	 * where 1 &lt;= queueNum &lt;= 25, and where order is and int indicating the following: 
 	 * 1. (or FIRST) – remove the first record from the queue 
 	 * 2. (or LAST) – remove the last record from the queue
-	 * @param order
+	 * @param option
 	 * @param queueNum
 	 * @return
 	 */
-	private Object removeFromQueue(int order, int queueNum) 
+	private Object removeFromQueue(int option, int queueNum) 
 	{
+		    // If the list value is improper, stop the simulation
+		    if(!((queueNum >= 0) && (queueNum <= MAX_LIST))) 
+		    {
+		    	System.out.println("\nInvalid list " + queueNum + " for list_remove at time " + sim_time);
+		        System.exit(1);
+		    }
 		
-//		    struct master *row = null, *ihead, *itail;
-//		
-//		    // If the list value is improper, stop the simulation
-//		    if(!((list >= 0) && (list <= MAX_LIST))) 
-//		    {
-//		    	System.out.println("\nInvalid list " + list + " for list_remove at time " + sim_time);
-//		        exit(1);
-//		    }
-//		
-//		    // If the list is empty, stop the simulation
-//		    if(list_size[list] <= 0)
-//		    {
-//		    	System.out.println("\nUnderflow of list " + list + " at time " + sim_time); 
-//		        exit(1);
-//		    }
-//		
-//		    // Decrement the list size
-//		    list_size[list]--;
-//		
-//		    // If the option value is improper, stop the simulation
-//		    if(!(option == FIRST || option == LAST)) 
-//		    {
-//		    	System.out.println("\n" + option + " is an invalid option for list_remove on list " + list + " at time " + sim_time);
-//		        exit(1);
-//		    }
-//		
-//		    if(list_size[list] == 0)
-//		    {
-//		        // There is only 1 record, so remove it
+		    // If the list is empty, stop the simulation
+		    if(eventLists.get(queueNum).isEmpty())
+		    {
+		    	System.out.println("\nUnderflow of list " + queueNum + " at time " + sim_time); 
+		        System.exit(1);
+		    }
+		
+		    // If the option value is improper, stop the simulation
+		    if(!(option == FIRST || option == LAST)) 
+		    {
+		    	System.out.println("\n" + option + " is an invalid option for list_remove on list " + queueNum + " at time " + sim_time);
+		        System.exit(1);
+		    }
+		
+		    if(eventLists.get(queueNum).isEmpty())
+		    {
+		        // There is only 1 record, so remove it
 //		        row = head[list];
 //		        head[list] = null;
 //		        tail[list] = null;
-//		    }
-//		    else 
-//		    {
-//		        // There is more than 1 record, so remove according to the desired option
+		    }
+		    else 
+		    {
+		        // There is more than 1 record, so remove according to the desired option
 //		        switch(option) 
 //		        {
 //		            case FIRST:
@@ -383,15 +381,10 @@ public class SimLib {
 //		                tail[list]  = itail;
 //		                break;
 //		        }
-//		    }
-//		
-//		    // Copy the data and free memory
-//		    free((char *)transfer);
-//		    transfer = (*row).value;
-//		    free((char *)row);
-//		
-//		    // Update the area under the number-in-list curve
-//		    timest((float)list_size[list], TIM_VAR + list);
+		    }
+		
+		    // Update the area under the number-in-list curve
+		    //timest(eventLists.get(queueNum).size(), TIM_VAR + queueNum);
 	}
 	
 	/**
@@ -401,20 +394,20 @@ public class SimLib {
 	 */
 	private void timing() 
 	{
-//	    //Remove the first event from the event list and put it in transfer[]
-//	    list_remove(FIRST, LIST_EVENT);
-//	
-//	    // Check for a time reversal
-//	    if(transfer[EVENT_TIME] < sim_time) {
-//	        printf(
-//	            "\nAttempt to schedule event type %f for time %f at time %f\n",
-//	            transfer[EVENT_TYPE], transfer[EVENT_TIME], sim_time);
-//	        exit(1);
-//	    }
-//	
-//	    // Advance the simulation clock and set the next event type
-//	    sim_time        = transfer[EVENT_TIME];
-//	    next_event_type = transfer[EVENT_TYPE];
+	    //Remove the first event from the event list and put it in transfer[]
+	    removeFromQueue(FIRST, LIST_EVENT);
+	
+	    // Check for a time reversal
+	    if(transfer[EVENT_TIME] < sim_time) 
+	    {
+	    	System.out.println("\nAttempt to schedule event type " + transfer[EVENT_TYPE] +
+	    			" for time " + transfer[EVENT_TIME] + " at time " + sim_time); 
+	        System.exit(1);
+	    }
+	
+	    // Advance the simulation clock and set the next event type
+	    sim_time        = transfer[EVENT_TIME];
+	    next_event_type = transfer[EVENT_TYPE];
 	}
 	
 	/**
@@ -428,11 +421,12 @@ public class SimLib {
 	 */
 	private void eventSchedule(double timeOfEvent, int typeOfEvent) 
 	{
-//	    transfer[EVENT_TIME] = time_of_event;
-//	    transfer[EVENT_TYPE] = type_of_event;
-//	    list_file(INCREASING, LIST_EVENT);
+	    //transfer[EVENT_TIME] = timeOfEvent;
+	    transfer[EVENT_TYPE] = typeOfEvent;
+	    //list_file(INCREASING, LIST_EVENT);
 	}
 	
+    private static float high, low, value;
 	/**
 	 * Cancels (removes) the first event in the event list with event type eventType (an int), 
 	 * if there is such an event. If the event list does not have an event of type eventType, 
@@ -444,25 +438,22 @@ public class SimLib {
 	 */
 	private int eventCancel(int eventType) 
 	{
-//	    struct master *row, *ahead, *behind;
-//	    static float high, low, value;
-//	
-//	    // If the event list is empty, do nothing and return 0
-//	    if(list_size[LIST_EVENT] == 0) return 0;
-//	
-//	    // Search the event list
+	    // If the event list is empty, do nothing and return 0
+	    if(eventLists.get(LIST_EVENT).size() == 0) return 0;
+	
+	    // Search the event list
 //	    row   = head[LIST_EVENT];
 //	    low   = event_type - EPSILON;
 //	    high  = event_type + EPSILON;
 //	    value = (*row).value[EVENT_TYPE] ;
-//	
+	
 //	    while (((value <= low) || (value >= high)) && (row != tail[LIST_EVENT]))
 //	    {
 //	        row   = (*row).sr;
 //	        value = (*row).value[EVENT_TYPE];
 //	    }
-//	
-//	    // Check to see if this is the end of the event list
+	
+	    // Check to see if this is the end of the event list
 //	    if (row == tail[LIST_EVENT]) 
 //	    {
 //	
@@ -476,332 +467,248 @@ public class SimLib {
 //	        else // no match
 //	            return 0;
 //	    }
-//	
-//	    /* Check to see if this is the head of the list.  If it is at the head, then
-//	       it MUST be a match. */
+	
+	    // Check to see if this is the head of the list.  If it is at the head, then
+	    // it MUST be a match
 //	    if (row == head[LIST_EVENT]) 
 //	    {
-//	        list_remove(FIRST, LIST_EVENT);
+//	        removeFromQueue(FIRST, LIST_EVENT);
 //	        return 1;
 //	    }
-//	
-//	    // Else remove this event somewhere in the middle of the event list
-//	
-//	    // Update pointers
-//	    ahead        = (*row).sr;
-//	    behind       = (*row).pr;
-//	    (*behind).sr = ahead;
-//	    (*ahead).pr  = behind;
-//	
-//	    // Decrement the size of the event list
-//	    list_size[LIST_EVENT]--;
-//	
-//	    // Copy and free memory
-//	    free((char *)transfer);       // Free the old transfer
-//	    transfer = (*row).value;      // Transfer the data
-//	    free((char *)row);            // Free the space vacated by row
-//	
-//	    // Update the area under the number-in-event-list curve
-//	    timest((float)list_size[LIST_EVENT], TIM_VAR + LIST_EVENT);
-//	    return 1;
+	
+	    // Else remove this event somewhere in the middle of the event list
+	
+	
+	    // Update the area under the number-in-event-list curve
+	    //timest(eventLists.get(LIST_EVENT).size(), TIM_VAR + LIST_EVENT);
+	    return 1;
 	}
-}
 
-//------------------------------------------------------------------------------
-// Old code not converted yet
-//------------------------------------------------------------------------------
+	/**
+	 * Schedule an event at time event_time of type event_type.  If attributes
+	 * beyond the first two (reserved for the event time and the event type) are
+	 * being used in the event list, it is the user's responsibility to place their
+	 * values into the transfer array before invoking event_schedule.
+	 * @param time_of_event
+	 * @param type_of_event
+	 */
+	private void event_schedule(float time_of_event, int type_of_event)
+	{
+	//    transfer[EVENT_TIME] = time_of_event;
+	//    transfer[EVENT_TYPE] = type_of_event;
+	//    list_file(INCREASING, LIST_EVENT);
+	}
+	
+	private float sampst(double d, int variable)
+	{
+	//
+	///* Initialize, update, or report statistics on discrete-time processes:
+	//   sum/average, max (default -1E30), min (default 1E30), number of observations
+	//   for sampst variable "variable", where "variable":
+	//       = 0 initializes accumulators
+	//       > 0 updates sum, count, min, and max accumulators with new observation
+	//       < 0 reports stats on variable "variable" and returns them in transfer:
+	//           [1] = average of observations
+	//           [2] = number of observations
+	//           [3] = maximum of observations
+	//           [4] = minimum of observations */
+	//
+	//    static int   ivar, num_observations[SVAR_SIZE];
+	//    static float max[SVAR_SIZE], min[SVAR_SIZE], sum[SVAR_SIZE];
+	//
+	//    /* If the variable value is improper, stop the simulation. */
+	//
+	//    if(!(variable >= -MAX_SVAR) && (variable <= MAX_SVAR)) {
+	//        printf("\n%d is an improper value for a sampst variable at time %f\n",
+	//            variable, sim_time);
+	//        exit(1);
+	//    }
+	//
+	//    /* Execute the desired option. */
+	//
+	//    if(variable > 0) { /* Update. */
+	//        sum[variable] += value;
+	//        if(value > max[variable]) max[variable] = value;
+	//        if(value < min[variable]) min[variable] = value;
+	//        num_observations[variable]++;
+	//        return 0.0;
+	//    }
+	//
+	//    if(variable < 0) { /* Report summary statistics in transfer. */
+	//        ivar        = -variable;
+	//        transfer[2] = (float) num_observations[ivar];
+	//        transfer[3] = max[ivar];
+	//        transfer[4] = min[ivar];
+	//        if(num_observations[ivar] == 0)
+	//            transfer[1] = 0.0;
+	//        else
+	//            transfer[1] = sum[ivar] / transfer[2];
+	//        return transfer[1];
+	//    }
+	//
+	//    /* Initialize the accumulators. */
+	//
+	//    for(ivar=1; ivar <= MAX_SVAR; ++ivar) {
+	//        sum[ivar]              = 0.0;
+	//        max[ivar]              = -INFINITY;
+	//        min[ivar]              =  INFINITY;
+	//        num_observations[ivar] = 0;
+	//    }
+	}
+	
+	private float timest(double d, int variable)
+	{
+	//
+	///* Initialize, update, or report statistics on continuous-time processes:
+	//   integral/average, max (default -1E30), min (default 1E30)
+	//   for timest variable "variable", where "variable":
+	//       = 0 initializes counters
+	//       > 0 updates area, min, and max accumulators with new level of variable
+	//       < 0 reports stats on variable "variable" and returns them in transfer:
+	//           [1] = time-average of variable updated to the time of this call
+	//           [2] = maximum value variable has attained
+	//           [3] = minimum value variable has attained
+	//   Note that variables TIM_VAR + 1 through TVAR_SIZE are used for automatic
+	//   record keeping on the length of lists 1 through MAX_LIST. */
+	//
+	//    int          ivar;
+	//    static float area[TVAR_SIZE], max[TVAR_SIZE], min[TVAR_SIZE],
+	//                 preval[TVAR_SIZE], tlvc[TVAR_SIZE], treset;
+	//
+	//    /* If the variable value is improper, stop the simulation. */
+	//
+	//    if(!(variable >= -MAX_TVAR) && (variable <= MAX_TVAR)) {
+	//        printf("\n%d is an improper value for a timest variable at time %f\n",
+	//            variable, sim_time);
+	//        exit(1);
+	//    }
+	//
+	//    /* Execute the desired option. */
+	//
+	//    if(variable > 0) { /* Update. */
+	//        area[variable] += (sim_time - tlvc[variable]) * preval[variable];
+	//        if(value > max[variable]) max[variable] = value;
+	//        if(value < min[variable]) min[variable] = value;
+	//        preval[variable] = value;
+	//        tlvc[variable]   = sim_time;
+	//        return 0.0;
+	//    }
+	//
+	//    if(variable < 0) { /* Report summary statistics in transfer. */
+	//        ivar         = -variable;
+	//        area[ivar]   += (sim_time - tlvc[ivar]) * preval[ivar];
+	//        tlvc[ivar]   = sim_time;
+	//        transfer[1]  = area[ivar] / (sim_time - treset);
+	//        transfer[2]  = max[ivar];
+	//        transfer[3]  = min[ivar];
+	//        return transfer[1];
+	//    }
+	//
+	//    /* Initialize the accumulators. */
+	//
+	//    for(ivar = 1; ivar <= MAX_TVAR; ++ivar) {
+	//        area[ivar]   = 0.0;
+	//        max[ivar]    = -INFINITY;
+	//        min[ivar]    =  INFINITY;
+	//        preval[ivar] = 0.0;
+	//        tlvc[ivar]   = sim_time;
+	//    }
+	//    treset = sim_time;
+	}
+	
+	private float filest(int list)
+	{
+	//
+	///* Report statistics on the length of list "list" in transfer:
+	//       [1] = time-average of list length updated to the time of this call
+	//       [2] = maximum length list has attained
+	//       [3] = minimum length list has attained
+	//   This uses timest variable TIM_VAR + list. */
+	//
+	//    return timest(0.0, -(TIM_VAR + list));
+	}
+	
+	private void out_sampst(PrintWriter writer, int lowvar, int highvar)
+	{
+	//
+	///* Write sampst statistics for variables lowvar through highvar on file
+	//   "unit". */
+	//
+	//    int ivar, iatrr;
+	//
+	//    if(lowvar>highvar || lowvar > MAX_SVAR || highvar > MAX_SVAR) return;
+	//
+	//    fprintf(unit, "\n sampst                         Number");
+	//    fprintf(unit, "\nvariable                          of");
+	//    fprintf(unit, "\n number       Average           values          Maximum");
+	//    fprintf(unit, "          Minimum");
+	//    fprintf(unit, "\n___________________________________");
+	//    fprintf(unit, "_____________________________________");
+	//    for(ivar = lowvar; ivar <= highvar; ++ivar) {
+	//        fprintf(unit, "\n\n%5d", ivar);
+	//        sampst(0.00, -ivar);
+	//        for(iatrr = 1; iatrr <= 4; ++iatrr) pprint_out(unit, iatrr);
+	//    }
+	//    fprintf(unit, "\n___________________________________");
+	//    fprintf(unit, "_____________________________________\n\n\n");
+	}
+	
+	private void out_timest(PrintWriter writer, int lowvar, int highvar)
+	{
+	//
+	///* Write timest statistics for variables lowvar through highvar on file
+	//   "unit". */
+	//
+	//    int ivar, iatrr;
+	//
+	//    if(lowvar > highvar || lowvar > TIM_VAR || highvar > TIM_VAR ) return;
+	//
+	//
+	//    fprintf(unit, "\n  timest");
+	//    fprintf(unit, "\n variable       Time");
+	//    fprintf(unit, "\n  number       average          Maximum          Minimum");
+	//    fprintf(unit, "\n________________________________________________________");
+	//    for(ivar = lowvar; ivar <= highvar; ++ivar) {
+	//        fprintf(unit, "\n\n%5d", ivar);
+	//        timest(0.00, -ivar);
+	//        for(iatrr = 1; iatrr <= 3; ++iatrr) pprint_out(unit, iatrr);
+	//    }
+	//    fprintf(unit, "\n________________________________________________________");
+	//    fprintf(unit, "\n\n\n");
+	}
+	
+	/**
+	 * Write timest list-length statistics for lists lowlist through highlist on
+	 * file "unit"
+	 */
+	private void out_filest(PrintWriter writer, int lowlist, int highlist)
+	{
+	    int list, iatrr;
+	
+	    if(lowlist > highlist || lowlist > MAX_LIST || highlist > MAX_LIST) return;
+	
+	    writer.println("\n  File 		Time");
+	    writer.println("  number		average		maximum			minumum");
+	    writer.println("-----------------------------------------------------");
+	    for(int i = lowlist; i <= highlist; ++i) 
+	    {
+	    	writer.println("\n"+i);
+	        filest(list);
+	        for(iatrr = 1; iatrr <= 3; ++iatrr) pprint_out(writer, iatrr);
+	    }
+	    writer.println("-----------------------------------------------------");
+	    writer.println("\n\n\n");
+	}
+	
+	/**
+	 * Write ith entry in transfer to file 
+	 */
+	private void pprint_out(PrintWriter writer, int i)
+	{
+	    if(transfer[i] == -1e30 || transfer[i] == 1e30)
+	    	writer.println("0.00");
+	    else
+	    	writer.println(transfer[i]);
+	}
 
-private void event_schedule(float time_of_event, int type_of_event)
-{
-//
-///* Schedule an event at time event_time of type event_type.  If attributes
-//   beyond the first two (reserved for the event time and the event type) are
-//   being used in the event list, it is the user's responsibility to place their
-//   values into the transfer array before invoking event_schedule. */
-//
-//    transfer[EVENT_TIME] = time_of_event;
-//    transfer[EVENT_TYPE] = type_of_event;
-//    list_file(INCREASING, LIST_EVENT);
-}
-
-private int event_cancel(int event_type)
-{
-//
-///* Remove the first event of type event_type from the event list, leaving its
-//   attributes in transfer.  If something is cancelled, event_cancel returns 1;
-//   if no match is found, event_cancel returns 0. */
-//
-//    struct       master *row, *ahead, *behind;
-//    static float high, low, value;
-//
-//    /* If the event list is empty, do nothing and return 0. */
-//
-//    if(list_size[LIST_EVENT] == 0) return 0;
-//
-//    /* Search the event list. */
-//
-//    row   = head[LIST_EVENT];
-//    low   = event_type - EPSILON;
-//    high  = event_type + EPSILON;
-//    value = (*row).value[EVENT_TYPE] ;
-//
-//    while (((value <= low) || (value >= high)) && (row != tail[LIST_EVENT])) {
-//        row   = (*row).sr;
-//        value = (*row).value[EVENT_TYPE];
-//    }
-//
-//    /* Check to see if this is the end of the event list. */
-//
-//    if (row == tail[LIST_EVENT]) {
-//
-//        /* Double check to see that this is a match. */
-//
-//        if ((value > low) && (value < high)) {
-//            list_remove(LAST, LIST_EVENT);
-//            return 1;
-//        }
-//
-//        else /* no match */
-//            return 0;
-//    }
-//
-//    /* Check to see if this is the head of the list.  If it is at the head, then
-//       it MUST be a match. */
-//
-//    if (row == head[LIST_EVENT]) {
-//        list_remove(FIRST, LIST_EVENT);
-//        return 1;
-//    }
-//
-//    /* Else remove this event somewhere in the middle of the event list. */
-//
-//    /* Update pointers. */
-//
-//    ahead        = (*row).sr;
-//    behind       = (*row).pr;
-//    (*behind).sr = ahead;
-//    (*ahead).pr  = behind;
-//
-//    /* Decrement the size of the event list. */
-//
-//    list_size[LIST_EVENT]--;
-//
-//    /* Copy and free memory. */
-//
-//    free((char *)transfer);       /* Free the old transfer. */
-//    transfer = (*row).value;      /* Transfer the data. */
-//    free((char *)row);            /* Free the space vacated by row. */
-//
-//    /* Update the area under the number-in-event-list curve. */
-//
-//    timest((float)list_size[LIST_EVENT], TIM_VAR + LIST_EVENT);
-//    return 1;
-}
-
-private float sampst(double d, int variable)
-{
-//
-///* Initialize, update, or report statistics on discrete-time processes:
-//   sum/average, max (default -1E30), min (default 1E30), number of observations
-//   for sampst variable "variable", where "variable":
-//       = 0 initializes accumulators
-//       > 0 updates sum, count, min, and max accumulators with new observation
-//       < 0 reports stats on variable "variable" and returns them in transfer:
-//           [1] = average of observations
-//           [2] = number of observations
-//           [3] = maximum of observations
-//           [4] = minimum of observations */
-//
-//    static int   ivar, num_observations[SVAR_SIZE];
-//    static float max[SVAR_SIZE], min[SVAR_SIZE], sum[SVAR_SIZE];
-//
-//    /* If the variable value is improper, stop the simulation. */
-//
-//    if(!(variable >= -MAX_SVAR) && (variable <= MAX_SVAR)) {
-//        printf("\n%d is an improper value for a sampst variable at time %f\n",
-//            variable, sim_time);
-//        exit(1);
-//    }
-//
-//    /* Execute the desired option. */
-//
-//    if(variable > 0) { /* Update. */
-//        sum[variable] += value;
-//        if(value > max[variable]) max[variable] = value;
-//        if(value < min[variable]) min[variable] = value;
-//        num_observations[variable]++;
-//        return 0.0;
-//    }
-//
-//    if(variable < 0) { /* Report summary statistics in transfer. */
-//        ivar        = -variable;
-//        transfer[2] = (float) num_observations[ivar];
-//        transfer[3] = max[ivar];
-//        transfer[4] = min[ivar];
-//        if(num_observations[ivar] == 0)
-//            transfer[1] = 0.0;
-//        else
-//            transfer[1] = sum[ivar] / transfer[2];
-//        return transfer[1];
-//    }
-//
-//    /* Initialize the accumulators. */
-//
-//    for(ivar=1; ivar <= MAX_SVAR; ++ivar) {
-//        sum[ivar]              = 0.0;
-//        max[ivar]              = -INFINITY;
-//        min[ivar]              =  INFINITY;
-//        num_observations[ivar] = 0;
-//    }
-}
-
-private float timest(double d, int variable)
-{
-//
-///* Initialize, update, or report statistics on continuous-time processes:
-//   integral/average, max (default -1E30), min (default 1E30)
-//   for timest variable "variable", where "variable":
-//       = 0 initializes counters
-//       > 0 updates area, min, and max accumulators with new level of variable
-//       < 0 reports stats on variable "variable" and returns them in transfer:
-//           [1] = time-average of variable updated to the time of this call
-//           [2] = maximum value variable has attained
-//           [3] = minimum value variable has attained
-//   Note that variables TIM_VAR + 1 through TVAR_SIZE are used for automatic
-//   record keeping on the length of lists 1 through MAX_LIST. */
-//
-//    int          ivar;
-//    static float area[TVAR_SIZE], max[TVAR_SIZE], min[TVAR_SIZE],
-//                 preval[TVAR_SIZE], tlvc[TVAR_SIZE], treset;
-//
-//    /* If the variable value is improper, stop the simulation. */
-//
-//    if(!(variable >= -MAX_TVAR) && (variable <= MAX_TVAR)) {
-//        printf("\n%d is an improper value for a timest variable at time %f\n",
-//            variable, sim_time);
-//        exit(1);
-//    }
-//
-//    /* Execute the desired option. */
-//
-//    if(variable > 0) { /* Update. */
-//        area[variable] += (sim_time - tlvc[variable]) * preval[variable];
-//        if(value > max[variable]) max[variable] = value;
-//        if(value < min[variable]) min[variable] = value;
-//        preval[variable] = value;
-//        tlvc[variable]   = sim_time;
-//        return 0.0;
-//    }
-//
-//    if(variable < 0) { /* Report summary statistics in transfer. */
-//        ivar         = -variable;
-//        area[ivar]   += (sim_time - tlvc[ivar]) * preval[ivar];
-//        tlvc[ivar]   = sim_time;
-//        transfer[1]  = area[ivar] / (sim_time - treset);
-//        transfer[2]  = max[ivar];
-//        transfer[3]  = min[ivar];
-//        return transfer[1];
-//    }
-//
-//    /* Initialize the accumulators. */
-//
-//    for(ivar = 1; ivar <= MAX_TVAR; ++ivar) {
-//        area[ivar]   = 0.0;
-//        max[ivar]    = -INFINITY;
-//        min[ivar]    =  INFINITY;
-//        preval[ivar] = 0.0;
-//        tlvc[ivar]   = sim_time;
-//    }
-//    treset = sim_time;
-}
-
-private float filest(int list)
-{
-//
-///* Report statistics on the length of list "list" in transfer:
-//       [1] = time-average of list length updated to the time of this call
-//       [2] = maximum length list has attained
-//       [3] = minimum length list has attained
-//   This uses timest variable TIM_VAR + list. */
-//
-//    return timest(0.0, -(TIM_VAR + list));
-}
-
-private void out_sampst(FILE *unit, int lowvar, int highvar)
-{
-//
-///* Write sampst statistics for variables lowvar through highvar on file
-//   "unit". */
-//
-//    int ivar, iatrr;
-//
-//    if(lowvar>highvar || lowvar > MAX_SVAR || highvar > MAX_SVAR) return;
-//
-//    fprintf(unit, "\n sampst                         Number");
-//    fprintf(unit, "\nvariable                          of");
-//    fprintf(unit, "\n number       Average           values          Maximum");
-//    fprintf(unit, "          Minimum");
-//    fprintf(unit, "\n___________________________________");
-//    fprintf(unit, "_____________________________________");
-//    for(ivar = lowvar; ivar <= highvar; ++ivar) {
-//        fprintf(unit, "\n\n%5d", ivar);
-//        sampst(0.00, -ivar);
-//        for(iatrr = 1; iatrr <= 4; ++iatrr) pprint_out(unit, iatrr);
-//    }
-//    fprintf(unit, "\n___________________________________");
-//    fprintf(unit, "_____________________________________\n\n\n");
-}
-
-private void out_timest(FILE *unit, int lowvar, int highvar)
-{
-//
-///* Write timest statistics for variables lowvar through highvar on file
-//   "unit". */
-//
-//    int ivar, iatrr;
-//
-//    if(lowvar > highvar || lowvar > TIM_VAR || highvar > TIM_VAR ) return;
-//
-//
-//    fprintf(unit, "\n  timest");
-//    fprintf(unit, "\n variable       Time");
-//    fprintf(unit, "\n  number       average          Maximum          Minimum");
-//    fprintf(unit, "\n________________________________________________________");
-//    for(ivar = lowvar; ivar <= highvar; ++ivar) {
-//        fprintf(unit, "\n\n%5d", ivar);
-//        timest(0.00, -ivar);
-//        for(iatrr = 1; iatrr <= 3; ++iatrr) pprint_out(unit, iatrr);
-//    }
-//    fprintf(unit, "\n________________________________________________________");
-//    fprintf(unit, "\n\n\n");
-}
-
-private void out_filest(FILE *unit, int lowlist, int highlist)
-{
-//
-///* Write timest list-length statistics for lists lowlist through highlist on
-//   file "unit". */
-//
-//    int list, iatrr;
-//
-//    if(lowlist > highlist || lowlist > MAX_LIST || highlist > MAX_LIST) return;
-//
-//    fprintf(unit, "\n  File         Time");
-//    fprintf(unit, "\n number       average          Maximum          Minimum");
-//    fprintf(unit, "\n_______________________________________________________");
-//    for(list = lowlist; list <= highlist; ++list) {
-//        fprintf(unit, "\n\n%5d", list);
-//        filest(list);
-//        for(iatrr = 1; iatrr <= 3; ++iatrr) pprint_out(unit, iatrr);
-//    }
-//    fprintf(unit, "\n_______________________________________________________");
-//    fprintf(unit, "\n\n\n");
-}
-
-private void pprint_out(FILE *unit, int i) /* Write ith entry in transfer to file                                     "unit". */
-{
-//    if(transfer[i] == -1e30 || transfer[i] == 1e30)
-//        fprintf(unit," %#15.6G ", 0.00);
-//    else
-//        fprintf(unit," %#15.6G ", transfer[i]);
 }
