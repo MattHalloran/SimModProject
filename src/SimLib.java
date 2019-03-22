@@ -9,16 +9,19 @@ import java.util.LinkedList;
  */
 public class SimLib {
 	
-	private int next_event_type, maxatr = 0, maxlist = 0;
+	PrintWriter writer;
+	private static String outFileLocation = "";
+	
+	private int maxatr = 0, maxlist = 0;
 	
 	//The simulation clock, updated by simlib function timing 
-	private double sim_time;
+	private double sim_time, next_event_type;
 	
 	private float[] prob_distrib = new float[26];
 	
 	private ArrayList<LinkedList<Double>> eventLists;
 	private int[] list_rank;
-	private int[] transfer;
+	private double[] transfer;
 	
 	private static int MODLUS = 2147483647, MULT1 = 24112, MULT2 = 26143;
 	
@@ -60,8 +63,13 @@ public class SimLib {
 	 * simulation run, initializes the simulation clock to 0.
 	 */
 	private void InitSimlib() {
-		// Initialize simlib.c.  List LIST_EVENT is reserved for event list, ordered by
-	    //event time.  init_simlib must be called from main by user
+		if(writer != null)
+			writer.close();
+		try {
+			writer = new PrintWriter(outFileLocation);
+		} catch(Exception e) {
+			System.out.println(e);
+		}
 	
 	    int list, listsize;
 	
@@ -76,7 +84,7 @@ public class SimLib {
 	
 	    eventLists = new ArrayList<LinkedList<Double>>();
 	    list_rank = new int[maxlist];
-	    transfer = new int[maxatr+1];
+	    transfer = new double[maxatr+1];
 	    
 	    // Initialize list attributes
 	    for(int i = 0; i < maxlist; i++) {
@@ -492,11 +500,11 @@ public class SimLib {
 	 * @param time_of_event
 	 * @param type_of_event
 	 */
-	private void event_schedule(float time_of_event, int type_of_event)
+	private void event_schedule(double time_of_event, int type_of_event)
 	{
-	//    transfer[EVENT_TIME] = time_of_event;
-	//    transfer[EVENT_TYPE] = type_of_event;
-	//    list_file(INCREASING, LIST_EVENT);
+	    transfer[EVENT_TIME] = time_of_event;
+	    transfer[EVENT_TYPE] = type_of_event;
+	    insertInQueue(INCREASING, LIST_EVENT);
 	}
 	
 	private float sampst(double d, int variable)
@@ -556,125 +564,135 @@ public class SimLib {
 	//    }
 	}
 	
-	private float timest(double d, int variable)
+    static double area[TVAR_SIZE], max[TVAR_SIZE], min[TVAR_SIZE],
+    preval[TVAR_SIZE], tlvc[TVAR_SIZE], treset;
+	/**
+	 * Initialize, update, or report statistics on continuous-time processes:
+	 * integral/average, max (default -1e30), min (default 1e30) for timest 
+	 * variable "variable", where:
+	 * 	= 0 initializes counters
+	 *  > 0 updates area, min, and max accumulators with new level of variable
+	 *  < 0 reports stats on variable "variable", and returns them in transfer:
+	 *  	[1] = time-average of variable updated to the time of this call
+	 *  	[2] = maximum value variable has attained
+	 *  	[3] = minimum value variable has attained
+	 *  Note that variable TIM_VAR + 1 through TVAR_SIZE are used for automatic 
+	 *  record-keeping on the length of lists 1 through MAX_LIST
+	 * @param d
+	 * @param variable
+	 * @return
+	 */
+	private double timest(double d, int variable)
 	{
-	//
-	///* Initialize, update, or report statistics on continuous-time processes:
-	//   integral/average, max (default -1E30), min (default 1E30)
-	//   for timest variable "variable", where "variable":
-	//       = 0 initializes counters
-	//       > 0 updates area, min, and max accumulators with new level of variable
-	//       < 0 reports stats on variable "variable" and returns them in transfer:
-	//           [1] = time-average of variable updated to the time of this call
-	//           [2] = maximum value variable has attained
-	//           [3] = minimum value variable has attained
-	//   Note that variables TIM_VAR + 1 through TVAR_SIZE are used for automatic
-	//   record keeping on the length of lists 1 through MAX_LIST. */
-	//
-	//    int          ivar;
-	//    static float area[TVAR_SIZE], max[TVAR_SIZE], min[TVAR_SIZE],
-	//                 preval[TVAR_SIZE], tlvc[TVAR_SIZE], treset;
-	//
-	//    /* If the variable value is improper, stop the simulation. */
-	//
-	//    if(!(variable >= -MAX_TVAR) && (variable <= MAX_TVAR)) {
-	//        printf("\n%d is an improper value for a timest variable at time %f\n",
-	//            variable, sim_time);
-	//        exit(1);
-	//    }
-	//
-	//    /* Execute the desired option. */
-	//
-	//    if(variable > 0) { /* Update. */
-	//        area[variable] += (sim_time - tlvc[variable]) * preval[variable];
-	//        if(value > max[variable]) max[variable] = value;
-	//        if(value < min[variable]) min[variable] = value;
-	//        preval[variable] = value;
-	//        tlvc[variable]   = sim_time;
-	//        return 0.0;
-	//    }
-	//
-	//    if(variable < 0) { /* Report summary statistics in transfer. */
-	//        ivar         = -variable;
-	//        area[ivar]   += (sim_time - tlvc[ivar]) * preval[ivar];
-	//        tlvc[ivar]   = sim_time;
-	//        transfer[1]  = area[ivar] / (sim_time - treset);
-	//        transfer[2]  = max[ivar];
-	//        transfer[3]  = min[ivar];
-	//        return transfer[1];
-	//    }
-	//
-	//    /* Initialize the accumulators. */
-	//
-	//    for(ivar = 1; ivar <= MAX_TVAR; ++ivar) {
-	//        area[ivar]   = 0.0;
-	//        max[ivar]    = -INFINITY;
-	//        min[ivar]    =  INFINITY;
-	//        preval[ivar] = 0.0;
-	//        tlvc[ivar]   = sim_time;
-	//    }
-	//    treset = sim_time;
+	
+	    int          ivar;
+	
+	    /* If the variable value is improper, stop the simulation. */
+	
+	    if(!(variable >= -MAX_TVAR) && (variable <= MAX_TVAR)) 
+	    {
+	    	System.out.println(variable + " is an improper value for a timest variable at time " + sim_time);
+	    	System.exit(1);
+	    }
+	
+	    /* Execute the desired option. */
+	
+	    if(variable > 0) { /* Update. */
+	        area[variable] += (sim_time - tlvc[variable]) * preval[variable];
+	        if(value > max[variable]) max[variable] = value;
+	        if(value < min[variable]) min[variable] = value;
+	        preval[variable] = value;
+	        tlvc[variable]   = sim_time;
+	        return 0;
+	    }
+	
+	    if(variable < 0) { /* Report summary statistics in transfer. */
+	        ivar         = -variable;
+	        area[ivar]   += (sim_time - tlvc[ivar]) * preval[ivar];
+	        tlvc[ivar]   = sim_time;
+	        transfer[1]  = area[ivar] / (sim_time - treset);
+	        transfer[2]  = max[ivar];
+	        transfer[3]  = min[ivar];
+	        return transfer[1];
+	    }
+	
+	    /* Initialize the accumulators. */
+	
+	    for(ivar = 1; ivar <= MAX_TVAR; ++ivar) {
+	        area[ivar]   = 0;
+	        max[ivar]    = Double.MIN_VALUE;
+	        min[ivar]    = Double.MAX_VALUE;
+	        preval[ivar] = 0;
+	        tlvc[ivar]   = sim_time;
+	    }
+	    treset = sim_time;
 	}
 	
+	/**
+	 * Report statistics on the length of list "list" in transfer:
+	 * 	[1] = time-average of list length updated to the time of this call
+	 *  [2] = maximum length list has attained
+	 *  [3] = minimum length list has attained
+	 * This uses timest variable TIM_VAR + list
+	 * @param list
+	 * @return
+	 */
 	private float filest(int list)
 	{
-	//
-	///* Report statistics on the length of list "list" in transfer:
-	//       [1] = time-average of list length updated to the time of this call
-	//       [2] = maximum length list has attained
-	//       [3] = minimum length list has attained
-	//   This uses timest variable TIM_VAR + list. */
-	//
-	//    return timest(0.0, -(TIM_VAR + list));
+	    return timest(0.0, -(TIM_VAR + list));
 	}
 	
+	/**
+	 * Write samst statistics for variable lowvar through highvar on 
+	 * file unit
+	 * @param writer
+	 * @param lowvar
+	 * @param highvar
+	 */
 	private void out_sampst(PrintWriter writer, int lowvar, int highvar)
 	{
-	//
-	///* Write sampst statistics for variables lowvar through highvar on file
-	//   "unit". */
-	//
-	//    int ivar, iatrr;
-	//
-	//    if(lowvar>highvar || lowvar > MAX_SVAR || highvar > MAX_SVAR) return;
-	//
-	//    fprintf(unit, "\n sampst                         Number");
-	//    fprintf(unit, "\nvariable                          of");
-	//    fprintf(unit, "\n number       Average           values          Maximum");
-	//    fprintf(unit, "          Minimum");
-	//    fprintf(unit, "\n___________________________________");
-	//    fprintf(unit, "_____________________________________");
-	//    for(ivar = lowvar; ivar <= highvar; ++ivar) {
-	//        fprintf(unit, "\n\n%5d", ivar);
-	//        sampst(0.00, -ivar);
-	//        for(iatrr = 1; iatrr <= 4; ++iatrr) pprint_out(unit, iatrr);
-	//    }
-	//    fprintf(unit, "\n___________________________________");
-	//    fprintf(unit, "_____________________________________\n\n\n");
+	
+	    int ivar, iatrr;
+	
+	    if(lowvar>highvar || lowvar > MAX_SVAR || highvar > MAX_SVAR) return;
+	
+	    writer.println("sampst                         Number");
+	    writer.println("variable                          of");
+	    writer.println("number       Average           values          Maximum		minumum");
+	    writer.println("----------------------------------------------------------");
+	    for(ivar = lowvar; ivar <= highvar; ++ivar) {
+	        writer.println("\n " + ivar);
+	        sampst(0.00, -ivar);
+	        for(iatrr = 1; iatrr <= 4; ++iatrr) pprint_out(writer, iatrr);
+	    }
+	    writer.println("----------------------------------------------------------\n\n\n");
 	}
 	
+	/**
+	 * Write timest statistics for variables lowvar through highvar on
+	 * file unit
+	 * @param writer
+	 * @param lowvar
+	 * @param highvar
+	 */
 	private void out_timest(PrintWriter writer, int lowvar, int highvar)
 	{
-	//
-	///* Write timest statistics for variables lowvar through highvar on file
-	//   "unit". */
-	//
-	//    int ivar, iatrr;
-	//
-	//    if(lowvar > highvar || lowvar > TIM_VAR || highvar > TIM_VAR ) return;
-	//
-	//
-	//    fprintf(unit, "\n  timest");
-	//    fprintf(unit, "\n variable       Time");
-	//    fprintf(unit, "\n  number       average          Maximum          Minimum");
-	//    fprintf(unit, "\n________________________________________________________");
-	//    for(ivar = lowvar; ivar <= highvar; ++ivar) {
-	//        fprintf(unit, "\n\n%5d", ivar);
-	//        timest(0.00, -ivar);
-	//        for(iatrr = 1; iatrr <= 3; ++iatrr) pprint_out(unit, iatrr);
-	//    }
-	//    fprintf(unit, "\n________________________________________________________");
-	//    fprintf(unit, "\n\n\n");
+	
+	    int ivar, iatrr;
+	
+	    if(lowvar > highvar || lowvar > TIM_VAR || highvar > TIM_VAR ) return;
+	
+	
+	    writer.println("timest");
+	    writer.println("variable 	Time");
+	    writer.println("number 		average		maximum		minumum");
+	    writer.println("--------------------------------------------------------");
+	    for(ivar = lowvar; ivar <= highvar; ++ivar) {
+	    	writer.println("\n " + ivar);
+	        timest(0.00, -ivar);
+	        for(iatrr = 1; iatrr <= 3; ++iatrr) pprint_out(writer, iatrr);
+	    }
+	    writer.println("----------------------------------------------------------\n\n\n");
 	}
 	
 	/**
