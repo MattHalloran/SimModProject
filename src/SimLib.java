@@ -1,3 +1,5 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -10,7 +12,8 @@ import java.util.LinkedList;
 public class SimLib {
 	
 	PrintWriter writer;
-	private static String outFileLocation = "";
+	BufferedReader reader;
+	private static String outFileLocation = "", inFileLocation = "";
 	
 	private int maxatr = 0, maxlist = 0;
 	
@@ -35,28 +38,6 @@ public class SimLib {
 			MAX_LIST = 25,
 			MAX_ATTR = 10;
 	
-	private static long randomNumbers[] =
-	{         
-	 1,
-	 1973272912, 281629770,  20006270,1280689831,2096730329,1933576050,
-	  913566091, 246780520,1363774876, 604901985,1511192140,1259851944,
-	  824064364, 150493284, 242708531,  75253171,1964472944,1202299975,
-	  233217322,1911216000, 726370533, 403498145, 993232223,1103205531,
-	  762430696,1922803170,1385516923,  76271663, 413682397, 726466604,
-	  336157058,1432650381,1120463904, 595778810, 877722890,1046574445,
-	   68911991,2088367019, 748545416, 622401386,2122378830, 640690903,
-	 1774806513,2132545692,2079249579,  78130110, 852776735,1187867272,
-	 1351423507,1645973084,1997049139, 922510944,2045512870, 898585771,
-	  243649545,1004818771, 773686062, 403188473, 372279877,1901633463,
-	  498067494,2087759558, 493157915, 597104727,1530940798,1814496276,
-	  536444882,1663153658, 855503735,  67784357,1432404475, 619691088,
-	  119025595, 880802310, 176192644,1116780070, 277854671,1366580350,
-	 1142483975,2026948561,1053920743, 786262391,1792203830,1494667770,
-	 1923011392,1433700034,1244184613,1147297105, 539712780,1545929719,
-	  190641742,1645390429, 264907697, 620389253,1502074852, 927711160,
-	  364849192,2049576050, 638580085, 547070247 
-	};
-	
 	
 	/**
 	 * Invoked from the main function at the beginning of each 
@@ -65,11 +46,11 @@ public class SimLib {
 	private void InitSimlib() {
 		if(writer != null)
 			writer.close();
-		try {
-			writer = new PrintWriter(outFileLocation);
-		} catch(Exception e) {
-			System.out.println(e);
-		}
+		writer = new PrintWriter(outFileLocation);
+
+		if(reader != null)
+			reader.close();
+		reader = new BufferedReader(new FileReader(inFileLocation));
 	
 	    int list, listsize;
 	
@@ -97,118 +78,6 @@ public class SimLib {
 	    // Initialize statistical routines
 	    sampst(0.0, 0);
 	    timest(0.0, 0);
-	}
-	
-	/**
-	 * 
-	 * @param mean
-	 * @param index user-specified random-number stream number,
-	 * @return a double with an observation from an exponential distribution with mean
-	 *“mean” (a double argument).
-	 */
-	private double Expon(double mean, int index) 
-	{
-		return -mean * Math.log(lcgrand(index));
-	}
-	
-	/**
-	 * random-number generator
-	 * @param index
-	 * @return a double with an observation from a (continuous) 
-	 * uniform distribution between 0 and 1, using stream “stream” (an int argument).
-	 */
-	private double lcgrand(int index) 
-	{
-		long number, lowerNumber, higherNumber;
-		number = randomNumbers[index];
-	    lowerNumber = (number & 65535) * MULT1;
-	    higherNumber = (number >> 16) * MULT1 + (lowerNumber >> 16);
-	    number = ((lowerNumber & 65535) - MODLUS) + ((higherNumber & 32767) << 16) + (higherNumber >> 15);
-	    if (number < 0)
-	    {
-	    	number += MODLUS;
-	    }
-	    lowerNumber = (number & 65535) * MULT2;
-	    higherNumber = (number >> 16) * MULT2 + (lowerNumber >> 16);
-	    number = ((lowerNumber & 65535) - MODLUS) + ((higherNumber & 32767) << 16) + (higherNumber >> 15);
-	    if (number < 0)
-	    {
-	    	number += MODLUS;
-	    }
-	    randomNumbers[index] = number;
-	    return (number >> 7 | 1) / 16777216.0;
-	}
-	
-	/**
-	 * “sets” the random-number seed for stream “stream” to the int argument zset.
-	 * @param zset
-	 * @param stream
-	 */
-	private void lcgrandst(int newNumber, int index) 
-	{
-		randomNumbers[index] = newNumber;
-	}
-	
-	/**
-	 * could be used to restart a subsequent simulation (using lcgrandst) 
-	 * from where the current one left off, as far as random-number usage is concerned.
-	 * @param index
-	 * @return an int with the current underlying integer for the 
-	 * random-number generator for index “index”;
-	 */
-	private int lcgrandgt(int index) 
-	{
-		return (int)randomNumbers[index];
-	}
-	
-	/**
-	 * 
-	 * @param a
-	 * @param b
-	 * @param index
-	 * @return a double with an observation from a (continuous) uniform 
-	 * distribution between a and b (both double arguments). As before, 
-	 * stream is an int between 1 and 100 giving the random-number index to be used.
-	 */
-	private double uniform(double a, double b, int index)
-	{
-		return a + lcgrand(index) * (b - a);
-	}
-	
-	/**
-	 * 
-	 * @param m
-	 * @param mean
-	 * @param index
-	 * @return a double with an observation from an m-Erlang distribution 
-	 * with mean “mean” using random-number index "index"
-	 */
-	private double erlang(int m, double mean, int index) 
-	{
-		int   i;
-	    double mean_exponential, sum;
-	
-	    mean_exponential = mean / m;
-	    sum = 0.0;
-	    for (i = 1; i <= m; ++i)
-	        sum += Expon(mean_exponential, index);
-	    return sum;
-	}
-	
-	/**
-	 * 
-	 * @param prob_distrib
-	 * @param index
-	 * @return
-	 */
-	private int randomInteger(float prob_distrib[], int index) 
-	{
-	    int   i;
-	    double u = lcgrand(index);
-	
-	    for (i = 0; u > prob_distrib[i]; i++)
-	        ;
-	    return i;
 	}
 	
 	/**
