@@ -235,11 +235,10 @@ public class MM1
     }
 
     /**
-     * Report
+     * Computes and prints estimates of desired measures of performance 
      */
     static void Report()
     {
-        // Compute and write estimates of desired measures of performance 
         System.out.printf("\n\nAverage delay in queue%11.3f minutes\n\n", total_of_delays / nCustsDelayed);
         System.out.printf("Average number in queue%10.3f\n\n", areaNumInQ / simTime);
         System.out.printf("Server utilization%15.3f\n\n", areaServerStatus / simTime);

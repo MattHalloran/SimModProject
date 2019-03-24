@@ -10,18 +10,15 @@ public class Bank
     static int   minTellers, maxTellers, numTellers, shortestLength, shortestQueue;
     static double lengthDoorsOpen;
 
-    static final int IDLE = 0;
-    static final int BUSY = 1;
+    static final int IDLE = 0,
+    				 BUSY = 1,
+    				 EVENT_ARRIVAL     = 1,  // Event type for arrival of a customer. 
+    				 EVENT_DEPARTURE   = 2,  // Event type for departure of a customer.
+    				 EVENT_CLOSE_DOORS = 3,  // Event type for closing doors at 5 P.M. 
+    				 STREAM_INTERARRIVAL = 1,
+    				 STREAM_SERVICE = 2;
 
-    static final int EVENT_ARRIVAL     = 1;  // Event type for arrival of a customer. 
-    static final int EVENT_DEPARTURE   = 2;  // Event type for departure of a customer.
-    static final int EVENT_CLOSE_DOORS = 3;  // Event type for closing doors at 5 P.M. 
-
-    static final int STREAM_INTERARRIVAL = 1;
-    static final int STREAM_SERVICE = 2;
-
-    static double meanInterArrival;
-    static double meanService;
+    static double meanInterArrival, meanService;
     static int nDelaysRequired;
 
     static int nEvents;
@@ -29,11 +26,10 @@ public class Bank
     static int numInQ;
     static double timeLastEvent;
     static int nCustsDelayed;
-    static double totalOfDelays; 
     static double areaNumInQ;
     static double areaServerStatus;
     static double[] timeNextEvent = new double[3];
-    static double total_of_delays;
+    static double totalOfDelays;
 
     /**
      * Main
@@ -43,10 +39,11 @@ public class Bank
      */
     public static void main(String[] args) 
     {
+    	Event.Initialize();
+    	
         nEvents = 2;
 
         minTellers = 5;
-        // maxTellers = 7;
         maxTellers = 5;
         meanInterArrival = 1.0;
         meanService = 4.5;
@@ -60,7 +57,6 @@ public class Bank
         System.out.printf("Bank closes after%16.3f hours\n\n\n\n", lengthDoorsOpen);
 
         // Run the simulation while more delays are still needed 
-        //        for (numTellers = minTellers; numTellers <= maxTellers; ++numTellers) 
         for (numTellers = minTellers; numTellers <= minTellers; ++numTellers) 
         {
             Event.Initialize();
@@ -76,7 +72,6 @@ public class Bank
 
             // Schedule the bank closing, in minutes
             ev = new Event(60.0 * lengthDoorsOpen, EVENT_CLOSE_DOORS);
-//            ev = new Event(20.0, EVENT_CLOSE_DOORS);
             
             Event.EventSchedule(ev);
 
@@ -98,7 +93,7 @@ public class Bank
                 }
             }
 
-            //Report();
+            Report();
         }
     }
 
@@ -110,7 +105,7 @@ public class Bank
      *  queues (1) to (nTellers) are the actual lines at the tellers
      *  
      */
-    static void Arrive()
+    private static void Arrive()
     {   
         // Schedule the next arrival. 
         Event ev = new Event(Event.GetSimTime() + SimLib_Random.Expon(meanInterArrival, STREAM_INTERARRIVAL), EVENT_ARRIVAL);
@@ -160,7 +155,7 @@ public class Bank
      *  queues (nTellers + 1) to (nTellerss + nTellers)  are the actual tellers (empty queue teller is idle, one in queue teller is busy
      *  queues (1) to (nTellers) are the actual lines at the tellers
      */
-    static void Depart(int teller)
+    private static void Depart(int teller)
     {   
         if (Event.GetQueueSize(teller) == 0)  // Is there a line at this teller??
         {
@@ -190,7 +185,7 @@ public class Bank
      *  queues (nTellers + 1) to (nTellerss + nTellers)  are the actual tellers (empty queue teller is idle, one in queue teller is busy
      *  queues (1) to (nTellers) are the actual lines at the tellers
      */
-    static void Jockey(int teller)
+    private static void Jockey(int teller)
     {
         int jumper, minDistance, ni, nj, otherTeller, distance;
 
@@ -245,5 +240,14 @@ public class Bank
                 Event.EventSchedule(ev);
             }
         }
+    }
+    
+    private static void Report()
+    {
+    	System.out.println("Finished the simulation");
+    	System.out.printf("\n\nAverage delay in queue%11.3f minutes\n\n", totalOfDelays / nCustsDelayed);
+        System.out.printf("Average number in queue%10.3f\n\n", areaNumInQ / Event.GetSimTime());
+        System.out.printf("Server utilization%15.3f\n\n", areaServerStatus / Event.GetSimTime());
+        System.out.printf("Time simulation ended%12.3f minutes", Event.GetSimTime());
     }
 }

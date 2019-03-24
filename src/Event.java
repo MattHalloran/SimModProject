@@ -14,12 +14,12 @@ public class Event
 {
     public enum Order {FIRST, LAST, INCREASING, DECREASING};
 
-    static private final int             MAX_QUEUES = 24;          
+    static private final int             MAX_QUEUES = 26;          
     static private double                simTime;
     static private int                   nextEventType;
     static private int                   tellerNumber;
     static private LinkedList<Event>     eventList;
-    static private ArrayList<LinkedList> queueLists;
+    static private ArrayList<LinkedList<Event>> queueLists;
 
     private double                      eventSimTime;
     private int                         eventType;
@@ -45,7 +45,7 @@ public class Event
         this.teller       = 0;
     }
     
-        /**
+    /**
      * Constructor for objects of class Event
      */
     public Event(double eventSimTime, int eventType, int teller)
@@ -55,15 +55,11 @@ public class Event
         this.teller       = teller;
     }
 
-    /**
-     */
     public double GetEventTime()
     {
         return eventSimTime;
     }
     
-    /**
-     */
     public int GetEventType()
     {
         return eventType;
@@ -74,24 +70,68 @@ public class Event
         return teller;
     }
 
-    static public void EventSchedule(Event ev)
+    static public void EventSchedule(Event ev)//TODO
     {
     }
 
-    static public void InsertInQueue(Event ev, Order order, int qNum)
+    /**
+     * Adds an event to a teller's queue
+     * 	[Order.FIRST] = Adds event to start of queue
+     * 	[Order.LAST] = Adds event to end of queue
+     * @param ev The event being added
+     * @param order Specifies where the event is being added
+     * @param qNum Specifies the queue that the event is being 
+     * added to
+     */
+    static public void InsertInQueue(Event ev, Order order, int qNum)//TODO
     {
-
+    	switch(order)
+    	{
+		case FIRST:
+			queueLists.get(qNum).addFirst(ev);
+		case LAST:
+			queueLists.get(qNum).addLast(ev);
+		default:
+			System.out.println("Invalid order number passed to Event.InsertInQueue()");
+    	}
     }
 
-    static Object RemoveFromQueue(Order order, int qNum)
+    /**
+     * Removes an event from a teller's queue
+     * 	[Order.FIRST] = Removes first event in queue
+     * 	[Order.LAST] = Removes last event in queue
+     * @param order
+     * @param qNum
+     * @return
+     */
+    static Event RemoveFromQueue(Order order, int qNum)//TODO
     {
+		if(queueLists.get(qNum).isEmpty())
+		{
+			System.out.println("Tried to remove from empty queue in Event.RemoveFromQueue");
+			return new Event();
+		}
 
+    	switch(order)
+    	{
+		case FIRST:
+			return queueLists.get(qNum).removeFirst();
+		case LAST:
+			return queueLists.get(qNum).removeLast();
+		default:
+			System.out.println("Invalid order number passed to Event.RemoveFromQueue()");
+			return new Event();
+    	}
     }
 
 
 
     static public void Initialize()
     {        
+    	eventList = new LinkedList<Event>();
+    	queueLists = new ArrayList<LinkedList<Event>>();
+    	for(int i = 0; i < MAX_QUEUES; i++)
+    		queueLists.add(new LinkedList<Event>());
     }
 
     static public double GetSimTime()
@@ -111,7 +151,13 @@ public class Event
 
     static public int GetQueueSize(int qNum)
     {
-    	if(qNum < 0 || qNum >= queueLists.size()) return -1;
+    	if(qNum < 0 || qNum >= queueLists.size()) 
+    	{ 
+    		System.out.println("Tried to access non-existing queue in Event.GetQueueSize");
+    		int maxSize = queueLists.size()-1;
+    		System.out.println("Requested cue " + qNum + ", when the highest is " + maxSize);
+    		return -1;
+    	}
     	return queueLists.get(qNum).size();
     }
 
@@ -124,8 +170,11 @@ public class Event
         
     }
 
+    /**
+     * Cancel the only arrival event in the event queue
+     * @param eventArrival
+     */
 	public static void EventCancel(int eventArrival) {
-		// TODO Auto-generated method stub
-		
+		//TODO
 	}
 }

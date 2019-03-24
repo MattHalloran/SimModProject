@@ -1,9 +1,10 @@
 
 /**
- * Write a description of class simlib here.
+ * Holds all of the methods for generating 
+ * random numbers
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * @author Matt Halloran
+ * @version 3-23-19
  */
 
 public class SimLib_Random
