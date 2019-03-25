@@ -1,8 +1,13 @@
-import java.util.Scanner;
+/**
+ * 
+ */
+
 import java.util.ArrayList;
 
 public class Bank
 {
+//	private static String inFileLocation = "./InFiles/Bank.in",
+//						  outFileLocation = "./OutFiles/Bank.out";
     static ArrayList<Double> timeArrival;
 
     /* Declare non-simlib global variables. */
@@ -12,9 +17,6 @@ public class Bank
 
     static final int IDLE = 0,
     				 BUSY = 1,
-    				 EVENT_ARRIVAL     = 1,  // Event type for arrival of a customer. 
-    				 EVENT_DEPARTURE   = 2,  // Event type for departure of a customer.
-    				 EVENT_CLOSE_DOORS = 3,  // Event type for closing doors at 5 P.M. 
     				 STREAM_INTERARRIVAL = 1,
     				 STREAM_SERVICE = 2;
 
@@ -39,15 +41,18 @@ public class Bank
      */
     public static void main(String[] args) 
     {
-    	Event.Initialize();
-    	
         nEvents = 2;
-
+        
         minTellers = 5;
         maxTellers = 5;
         meanInterArrival = 1.0;
         meanService = 4.5;
         lengthDoorsOpen = 8.0;    // in hours
+        
+        numTellers = minTellers;
+        
+    	SimData.Initialize(maxTellers, numTellers);
+        SimData.SetClosingTime(60 * lengthDoorsOpen);
 
         // Write report heading and input parameters. 
         System.out.printf("Multiteller bank with separate queues & jockeying\n\n");
@@ -56,198 +61,89 @@ public class Bank
         System.out.printf("Mean service time%16.3f minutes\n\n", meanService);
         System.out.printf("Bank closes after%16.3f hours\n\n\n\n", lengthDoorsOpen);
 
+        double nextArrivalTime = Integer.MIN_VALUE, nextDepartureTime = -1;
         // Run the simulation while more delays are still needed 
-        for (numTellers = minTellers; numTellers <= minTellers; ++numTellers) 
+        while(SimData.StoreOpen() || SimData.customersInStore() > 0)
         {
-            Event.Initialize();
-
-            //UpdateTimAvgStats();     // Update time-average statistical accumulators.
-
-            // Schedule the first arrival. 
-            double time = SimLib_Random.Expon(meanInterArrival, STREAM_INTERARRIVAL);
-            Event ev = new Event(time, EVENT_ARRIVAL);
-            //System.out.println("time generated " + time);
-            Event.EventSchedule(ev);
-            //Event.DisplayQueue();
-
-            // Schedule the bank closing, in minutes
-            ev = new Event(60.0 * lengthDoorsOpen, EVENT_CLOSE_DOORS);
-            
-            Event.EventSchedule(ev);
-
-            while (Event.GetQueueSize(25) != 0)
-            {
-                Event.Timing();                // Determine the next event.
-
-                switch (Event.GetNextEventType())   // Invoke the appropriate event function.
-                {
-                    case EVENT_ARRIVAL:
-                       Arrive();
-                    break;
-                    case EVENT_DEPARTURE:
-                       Depart(Event.GetTellerNumber());
-                    break;
-                    case EVENT_CLOSE_DOORS:
-                       Event.EventCancel(EVENT_ARRIVAL); //Cancel the only arrival event in the event queue
-                    break;
-                }
-            }
-
-            Report();
+        	System.out.println(SimData.GetSimTime());
+        	
+        	//New customers only enter when the store is still open
+        	if(SimData.StoreOpen() && nextArrivalTime < nextDepartureTime)
+        	{
+        		nextArrivalTime = SimData.GetSimTime() + SimLib_Random.Expon(meanInterArrival, STREAM_INTERARRIVAL);
+        		Arrive(nextArrivalTime);
+        	}
+        	else if(SimData.customersInStore() > 0)
+        	{
+        		nextDepartureTime = SimData.GetSimTime() + SimLib_Random.Expon(meanService, STREAM_SERVICE);
+        		Depart(nextDepartureTime);
+        	}
         }
+        Report();
     }
 
-    /*****************************************************************************************************************************
-     * 
-     * Arrive
-     * 
-     *  queues (nTellers + 1) to (nTellerss + nTellers)  are the actual tellers (empty queue teller is idle, one in queue teller is busy
-     *  queues (1) to (nTellers) are the actual lines at the tellers
-     *  
+    /**
+     * Updates queues and statistics for an event arrival
      */
-    private static void Arrive()
+    private static void Arrive(double time)
     {   
-        // Schedule the next arrival. 
-        Event ev = new Event(Event.GetSimTime() + SimLib_Random.Expon(meanInterArrival, STREAM_INTERARRIVAL), EVENT_ARRIVAL);
-        Event.EventSchedule(ev);
-        //        Event.DisplayQueue();
-
-        for (int teller = 1; teller <= numTellers; ++teller) 
-        {
-            if (Event.GetQueueSize(numTellers + teller) == 0)  // Is the teller idle? if so, this customer has 0 delay
-            {
-                ev = new Event(); // fake event
-
-                // Make this teller busy (attributes are irrelevant). 
-                Event.InsertInQueue(ev, Event.Order.FIRST, numTellers + teller);
-
-                // Schedule a service completion. 
-
-                ev = new Event(Event.GetSimTime() + SimLib_Random.Expon(meanService, STREAM_SERVICE), EVENT_DEPARTURE, teller);
-                Event.EventSchedule(ev);
-
-                return;
-            }
-        }
-
-        // All tellers are busy, so find the shortest queue (leftmost shortest in case of ties).
-
-        int shortestLength = Event.GetQueueSize(1);
-        int shortestQueue = 1;
-
-        for (int teller = 2; teller <= numTellers; ++teller)
-        {
-            if (Event.GetQueueSize(teller) < shortestLength) {
-                shortestLength = Event.GetQueueSize(teller);
-                shortestQueue  = teller;
-            }
-        }  
-
-        // Place the customer at the end of the leftmost shortest queue. 
-        ev = new Event(); // fake event
-        Event.InsertInQueue(ev, Event.Order.LAST, shortestQueue);
+		Customer arrivingCustomer = new Customer(time, SimData.GetShortestLine());
+		SimData.InsertInQueue(arrivingCustomer, SimData.Order.LAST, arrivingCustomer.GetTeller());
+		if(SimData.GetQueueSize(arrivingCustomer.GetTeller()) > 1)
+		{
+			nCustsDelayed++;
+		}
     }
 
-    /*****************************************************************************************************************************
-     * 
-     * Depart
-     * 
-     *  queues (nTellers + 1) to (nTellerss + nTellers)  are the actual tellers (empty queue teller is idle, one in queue teller is busy
-     *  queues (1) to (nTellers) are the actual lines at the tellers
-     */
-    private static void Depart(int teller)
+    private static void Depart(double time)
     {   
-        if (Event.GetQueueSize(teller) == 0)  // Is there a line at this teller??
-        {
-            // There was no line at this teller, and since we are processing departure this teller goes idle via remove from queue
-            Event.RemoveFromQueue(Event.Order.FIRST, numTellers + teller);
-        }
-        else
-        {
-            // There is a line at this teller, so move the first one is line, and then schedule when this customer will leave the teller
-            Event.RemoveFromQueue(Event.Order.FIRST, teller);
-            
-            // Create the depart event for the customer now being served by teller number (teller)
-            Event ev = new Event(Event.GetSimTime() + SimLib_Random.Expon(meanService, STREAM_SERVICE), EVENT_DEPARTURE, teller);
-            Event.EventSchedule(ev);
-        }
-
+		int finishingTeller = SimData.GetDepartingQueue();
+		Customer leavingCustomer = SimData.RemoveFromQueue(SimData.Order.FIRST, finishingTeller, time);
+		totalOfDelays += leavingCustomer.getTimeLeft() - leavingCustomer.GetTimeArrived();
+		
         // Let a customer from the end of another queue jockey to the end of this queue, if possible. 
-        Jockey(teller);
+        Jockey(leavingCustomer.GetTeller());
     }
 
-    /*****************************************************************************************************************************
-     * 
-     * Jockey
-     * 
-     * Jockey a customer to the end of queue "teller" from the end of another queue, if possible.
+    /**
+     * Jockey customers to the end of queue "teller" from the end of another queue, if possible.
      *  
-     *  queues (nTellers + 1) to (nTellerss + nTellers)  are the actual tellers (empty queue teller is idle, one in queue teller is busy
-     *  queues (1) to (nTellers) are the actual lines at the tellers
      */
     private static void Jockey(int teller)
     {
-        int jumper, minDistance, ni, nj, otherTeller, distance;
-
-        //Find the number, jumper, of the queue whose last customer will jockey to
-        // queue or teller "teller", if there is such a customer. 
-
-        jumper       = 0;
-        minDistance = 1000;
-        ni           = Event.GetQueueSize(teller) + Event.GetQueueSize(numTellers + teller);
-
-        // Scan all the lines at the tellers
-        for (otherTeller = 1; otherTeller <= numTellers; ++otherTeller)
-        {
-            int lineSize     = Event.GetQueueSize(otherTeller);
-            int tellerStatus = Event.GetQueueSize(numTellers + otherTeller);
-            System.out.print("(" + tellerStatus + ") - " + lineSize + " "); // Display teller state, and line size
-            nj = lineSize + tellerStatus;
-            distance = Math.abs(teller - otherTeller);
-            
-            // Check whether the customer at the end of queue other_teller qualifies
-            // for being the jockeying choice so far. 
-            if (otherTeller != teller && nj > ni + 1 && distance < minDistance) 
-            {
-                // The customer at the end of queue other_teller is our choice so
-                // far for the jockeying customer, so remember his queue number and
-                // its distance from the destination queue. 
-
-                jumper       = otherTeller;
-                minDistance = distance;
-            }   
-        } 
-        System.out.println();
-
-        // Check to see whether a jockeying customer was found
-        if (jumper > 0) 
-        {
-            Event.RemoveFromQueue(Event.Order.LAST, jumper);
-            if (Event.GetQueueSize(numTellers + teller) > 0)
-            {
-                // The teller of his new queue is busy, so place the customer at the end of this queue. 
-                Event ev = new Event(); // fake event
-                Event.InsertInQueue(ev, Event.Order.LAST, teller);
-            }
-            else 
-            {
-                // The teller of his new queue is idle, so tally the jockeying customer's delay, make 
-                // the teller busy, and start service. 
-                Event ev = new Event(); // fake event
-                Event.InsertInQueue(ev, Event.Order.FIRST, numTellers + teller);
-                System.out.println("Jockey");
-                ev = new Event(Event.GetSimTime() + SimLib_Random.Expon(meanService, STREAM_SERVICE), EVENT_DEPARTURE, teller);
-                Event.EventSchedule(ev);
-            }
-        }
+    	//Only jockeys if the difference in queue size is at least this
+    	int minDifference = 2;
+    	
+    	boolean done = false;
+    	while(!done)
+    	{
+    		int shorterQueueSize = SimData.GetQueueSize(teller);
+    		int longestQueueIndex = SimData.GetLongestLine();
+    		int longestQueueSize = SimData.GetQueueSize(longestQueueIndex);
+    		if(longestQueueSize - shorterQueueSize >= minDifference)
+    			SimData.JockeyCustomer(longestQueueIndex, teller);
+    		else
+    			done = true;
+    	}
     }
     
+    /**
+     * Displays simulation data
+     */
     private static void Report()
     {
     	System.out.println("Finished the simulation");
-    	System.out.printf("\n\nAverage delay in queue%11.3f minutes\n\n", totalOfDelays / nCustsDelayed);
-        System.out.printf("Average number in queue%10.3f\n\n", areaNumInQ / Event.GetSimTime());
-        System.out.printf("Server utilization%15.3f\n\n", areaServerStatus / Event.GetSimTime());
-        System.out.printf("Time simulation ended%12.3f minutes", Event.GetSimTime());
+    	double averageDelay = 0, averageNum = 0, serverUtilization = 0;
+    	if(nCustsDelayed != 0)
+    		averageDelay = totalOfDelays / nCustsDelayed;
+    	if(SimData.GetSimTime() != 0)
+    	{
+    		averageNum = areaNumInQ / SimData.GetSimTime();
+    		serverUtilization = areaServerStatus / SimData.GetSimTime();
+    	}
+    	System.out.printf("\n\nAverage delay in queue%11.3f minutes\n\n", averageDelay);
+        System.out.printf("Average number in queue%10.3f\n\n", averageNum);
+        System.out.printf("Server utilization%15.3f\n\n", serverUtilization);
+        System.out.printf("Time simulation ended%12.3f minutes", SimData.GetSimTime());
     }
 }

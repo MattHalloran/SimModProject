@@ -1,5 +1,6 @@
-
-import java.util.Scanner;
+/**
+ * @author Matt Halloran
+ */
 import java.util.ArrayList;
 
 public class MM1

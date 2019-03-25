@@ -1,3 +1,4 @@
+import java.util.Random;
 
 /**
  * Holds all of the methods for generating 
@@ -9,7 +10,9 @@
 
 public class SimLib_Random
 {
-    static long[] random_numbers = {1, 1973272912, 281629770,  20006270,1280689831,2096730329,1933576050,
+	private static Random ran = new Random();
+	
+    private static long[] random_numbers = {1, 1973272912, 281629770,  20006270,1280689831,2096730329,1933576050,
             913566091, 246780520,1363774876, 604901985,1511192140,1259851944,
             824064364, 150493284, 242708531,  75253171,1964472944,1202299975,
             233217322,1911216000, 726370533, 403498145, 993232223,1103205531,
@@ -129,7 +132,7 @@ public class SimLib_Random
 	 * @return a double with an observation from an m-Erlang distribution 
 	 * with mean “mean” using random-number index "index"
 	 */
-	private double Erlang(int m, double mean, int index) 
+	public static double Erlang(int m, double mean, int index) 
 	{
 		int   i;
 	    double mean_exponential, sum;
@@ -147,7 +150,7 @@ public class SimLib_Random
 	 * @param index
 	 * @return
 	 */
-	private int RandomInteger(float prob_distrib[], int index) 
+	public static int RandomInteger(float prob_distrib[], int index) 
 	{
 	    int   i;
 	    double u = lcgrand(index);
@@ -155,6 +158,11 @@ public class SimLib_Random
 	    for (i = 0; u > prob_distrib[i]; i++)
 	        ;
 	    return i;
+	}
+	
+	public static <T> T RandomValue(T[] array)
+	{
+	    return array[ran.nextInt(array.length)];
 	}
 
 }
