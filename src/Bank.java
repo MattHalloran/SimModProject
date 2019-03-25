@@ -16,22 +16,16 @@ public class Bank
     static double lengthDoorsOpen;
 
     static final int IDLE = 0,
-    				 BUSY = 1,
-    				 STREAM_INTERARRIVAL = 1,
-    				 STREAM_SERVICE = 2;
+    				 BUSY = 1;
 
     static double meanInterArrival, meanService;
     static int nDelaysRequired;
 
-    static int nEvents;
-    static int serverStatus;
-    static int numInQ;
-    static double timeLastEvent;
     static int nCustsDelayed;
     static double areaNumInQ;
     static double areaServerStatus;
-    static double[] timeNextEvent = new double[3];
     static double totalOfDelays;
+    static int eventCount;
 
     /**
      * Main
@@ -41,11 +35,9 @@ public class Bank
      */
     public static void main(String[] args) 
     {
-        nEvents = 2;
-        
         minTellers = 5;
         maxTellers = 5;
-        meanInterArrival = 1.0;
+        meanInterArrival = 3.0;
         meanService = 4.5;
         lengthDoorsOpen = 8.0;    // in hours
         
@@ -61,23 +53,30 @@ public class Bank
         System.out.printf("Mean service time%16.3f minutes\n\n", meanService);
         System.out.printf("Bank closes after%16.3f hours\n\n\n\n", lengthDoorsOpen);
 
-        double nextArrivalTime = Integer.MIN_VALUE, nextDepartureTime = -1;
+        double nextArrivalTime = SimLib_Random.Expon(meanInterArrival),
+        		nextDepartureTime = SimLib_Random.Expon(meanService);
         // Run the simulation while more delays are still needed 
-        while(SimData.StoreOpen() || SimData.customersInStore() > 0)
+        while(SimData.StoreOpen() || SimData.CustomersInStore() > 0)
         {
         	System.out.println(SimData.GetSimTime());
-        	
         	//New customers only enter when the store is still open
-        	if(SimData.StoreOpen() && nextArrivalTime < nextDepartureTime)
+        	if(SimData.CustomersInStore() > 0 && (!SimData.StoreOpen() || nextDepartureTime < nextArrivalTime))
         	{
-        		nextArrivalTime = SimData.GetSimTime() + SimLib_Random.Expon(meanInterArrival, STREAM_INTERARRIVAL);
-        		Arrive(nextArrivalTime);
-        	}
-        	else if(SimData.customersInStore() > 0)
-        	{
-        		nextDepartureTime = SimData.GetSimTime() + SimLib_Random.Expon(meanService, STREAM_SERVICE);
+        		nextDepartureTime += SimLib_Random.Expon(meanService);
         		Depart(nextDepartureTime);
         	}
+        	else if(nextArrivalTime < nextDepartureTime)
+        	{
+        		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
+        		Arrive(nextArrivalTime);
+        	}
+        	else//no customers, but nextDepartureTime was first
+        	{
+        		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
+        	}
+        	areaNumInQ += SimData.CustomersInStore();
+        	areaServerStatus += SimData.CurrentServerUtilization();
+        	eventCount++;
         }
         Report();
     }
@@ -136,10 +135,10 @@ public class Bank
     	double averageDelay = 0, averageNum = 0, serverUtilization = 0;
     	if(nCustsDelayed != 0)
     		averageDelay = totalOfDelays / nCustsDelayed;
-    	if(SimData.GetSimTime() != 0)
+    	if(eventCount > 0)
     	{
-    		averageNum = areaNumInQ / SimData.GetSimTime();
-    		serverUtilization = areaServerStatus / SimData.GetSimTime();
+    		averageNum = areaNumInQ / eventCount;
+    		serverUtilization = areaServerStatus / eventCount;
     	}
     	System.out.printf("\n\nAverage delay in queue%11.3f minutes\n\n", averageDelay);
         System.out.printf("Average number in queue%10.3f\n\n", averageNum);

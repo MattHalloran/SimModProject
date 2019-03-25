@@ -30,7 +30,7 @@ public class SimData
     		queueLists.add(new LinkedList<Customer>());
     }
     
-    public static int customersInStore()
+    public static int CustomersInStore()
     {
     	return customersInStore;
     }
@@ -114,7 +114,8 @@ public class SimData
 			System.out.println("Invalid order number passed to Event.RemoveFromQueue()");
 		}
 		
-    	leavingCustomer.setTimeLeft(GetSimTime());
+    	leavingCustomer.setTimeLeft(time);
+    	currentTime = time;
     	return leavingCustomer;
     }
     
@@ -217,5 +218,20 @@ public class SimData
 	{
 		Customer c = queueLists.get(from).removeLast();
 		queueLists.get(to).addFirst(c);
+	}
+	
+	/**
+	 * 
+	 * @return The current percentage of tellers with customers
+	 */
+	public static double CurrentServerUtilization()
+	{
+		int busyTellers = 0;
+		for(int i = 0; i < numTellers; i++)
+		{
+			if(GetQueueSize(i) > 0)
+				busyTellers++;
+		}
+		return busyTellers/numTellers;
 	}
 }

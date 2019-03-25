@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -54,6 +56,11 @@ public class SimLib_Random
     {
         return -mean * Math.log(lcgrand(stream));
 
+    }
+    
+    public static double Expon(double mean)
+    {
+    	return -mean * Math.log(lcgrand(ran.nextInt(random_numbers.length)));
     }
 
     /* Generate the next random number. */
@@ -164,5 +171,4 @@ public class SimLib_Random
 	{
 	    return array[ran.nextInt(array.length)];
 	}
-
 }
