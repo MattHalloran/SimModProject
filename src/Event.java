@@ -1,5 +1,6 @@
 /**
- * 
+ * Will be used to create a log of everything 
+ * that happened in the simulation. not used yet
  * @author Matt Halloran
  *
  */

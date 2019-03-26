@@ -24,6 +24,7 @@ public class SimData
     {        
     	numTellers = tellers;
     	customersInStore = 0;
+    	currentTime = 0;
     	eventList = new LinkedList<Event>();
     	queueLists = new ArrayList<LinkedList<Customer>>();
     	for(int i = 0; i < numQueues; i++)
@@ -64,17 +65,17 @@ public class SimData
      * @param qNum Specifies the queue that the event is being 
      * added to
      */
-    static public void InsertInQueue(Customer ev, Order order, int qNum)//TODO
+    static public void InsertInQueue(Customer customer, Order order, int qNum)//TODO
     {
-    	currentTime = ev.GetTimeArrived();
+    	currentTime = customer.GetTimeArrived();
     	customersInStore++;
     	if(order == Order.FIRST)
     	{
-    		queueLists.get(qNum).addFirst(ev);
+    		queueLists.get(qNum).addFirst(customer);
     	}
     	else if(order == Order.LAST)
     	{
-    		queueLists.get(qNum).addLast(ev);
+    		queueLists.get(qNum).addLast(customer);
     	}
     	else
     	{
