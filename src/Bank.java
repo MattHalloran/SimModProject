@@ -12,15 +12,17 @@ public class Bank
 
     /* Declare non-simlib global variables. */
 
-    static int   minTellers, maxTellers, numTellers, shortestLength, shortestQueue;
+    static int   minTellers, 
+    			 maxTellers, 
+    			 numTellers, 
+    			 shortestLength, 
+    			 shortestQueue,
+    			 maxNumCustomers;
     static double lengthDoorsOpen;
 
-    static final int IDLE = 0,
-    				 BUSY = 1;
-
     static double meanInterArrival, meanService;
-    static int nDelaysRequired;
 
+    static int totalCustomers;
     static int nCustsDelayed;
     static double areaNumInQ;
     static double areaServerStatus;
@@ -40,6 +42,7 @@ public class Bank
         meanInterArrival = 3.0;
         meanService = 4.5;
         lengthDoorsOpen = 8.0;    // in hours
+        maxNumCustomers = Integer.MAX_VALUE;
         
         numTellers = minTellers;
         
@@ -56,7 +59,7 @@ public class Bank
         double nextArrivalTime = SimLib_Random.Expon(meanInterArrival),
         		nextDepartureTime = SimLib_Random.Expon(meanService);
         // Run the simulation while more delays are still needed 
-        while(SimData.StoreOpen() || SimData.CustomersInStore() > 0)
+        while(totalCustomers < maxNumCustomers && SimData.StoreOpen() || SimData.CustomersInStore() > 0)
         {
         	System.out.println(SimData.GetSimTime());
         	//New customers only enter when the store is still open
@@ -69,11 +72,13 @@ public class Bank
         	{
         		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
         		Arrive(nextArrivalTime);
+        		totalCustomers++;
         	}
-        	else//no customers, but nextDepartureTime was first
-        	{
+        	else if(nextDepartureTime <= nextArrivalTime)
+        		nextDepartureTime += nextDepartureTime += SimLib_Random.Expon(meanService);
+        	else
         		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
-        	}
+        		
         	areaNumInQ += SimData.CustomersInStore();
         	areaServerStatus += SimData.CurrentServerUtilization();
         	eventCount++;
@@ -82,7 +87,7 @@ public class Bank
     }
 
     /**
-     * Updates queues and statistics for an event arrival
+     * Updates queues and statistics for a customer arriving
      */
     private static void Arrive(double time)
     {   
@@ -94,6 +99,9 @@ public class Bank
 		}
     }
 
+    /**
+     * Updates queues and statistics for a customer leaving
+     */
     private static void Depart(double time)
     {   
 		int finishingTeller = SimData.GetDepartingQueue();

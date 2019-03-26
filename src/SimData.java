@@ -79,6 +79,7 @@ public class SimData
     	else
     	{
 			System.out.println("Invalid order type passed to Event.InsertInQueue()");
+			System.exit(1);
     	}
     }
     
@@ -95,7 +96,7 @@ public class SimData
 		if(queueLists.get(qNum).isEmpty())
 		{
 			System.out.println("Tried to remove from empty queue in Event.RemoveFromQueue");
-			return new Customer();
+			System.exit(1);
 		}
 
 		customersInStore--;
@@ -136,7 +137,7 @@ public class SimData
     		System.out.println("Tried to access non-existing queue in Event.GetQueueSize");
     		int maxSize = queueLists.size()-1;
     		System.out.println("Requested cue " + qNum + ", when the highest is " + maxSize);
-    		return -1;
+    		System.exit(1);
     	}
     	return queueLists.get(qNum).size();
     }
