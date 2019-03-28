@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Stores simulation information, such as the queue lines
  * and current time
- * @author Matt Halloran
+ * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
  *
  */
 public class SimData 
