@@ -6,7 +6,7 @@ import java.util.Random;
  * Holds all of the methods for generating 
  * random numbers
  * 
- * @author Matt Halloran
+ * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
  * @version 3-23-19
  */
 
@@ -50,7 +50,7 @@ public class SimLib_Random
 	 * @param mean
 	 * @param index user-specified random-number stream number,
 	 * @return a double with an observation from an exponential distribution with mean
-	 *“mean” (a double argument).
+	 *â€œmeanâ€ (a double argument).
 	 */
     public static double Expon(double mean, int stream) // Exponential variate generation function. 
     {
@@ -68,7 +68,7 @@ public class SimLib_Random
 	 * random-number generator
 	 * @param index
 	 * @return a double with an observation from a (continuous) 
-	 * uniform distribution between 0 and 1, using stream “stream” (an int argument).
+	 * uniform distribution between 0 and 1, using stream â€œstreamâ€ (an int argument).
 	 */
     public static double lcgrand(int stream)
     {
@@ -110,7 +110,7 @@ public class SimLib_Random
     }
 
     /**
-	 * “sets” the random-number seed for stream “stream” to the int argument zset.
+	 * â€œsetsâ€ the random-number seed for stream â€œstreamâ€ to the int argument zset.
 	 * @param zset
 	 * @param stream
 	 */
@@ -124,7 +124,7 @@ public class SimLib_Random
 	 * from where the current one left off, as far as random-number usage is concerned.
 	 * @param index
 	 * @return an int with the current underlying integer for the 
-	 * random-number generator for index “index”;
+	 * random-number generator for index â€œindexâ€;
 	 */
     public static long lcgrandgt (int stream) // Return the current zrng for stream "stream". 
     {
@@ -137,7 +137,7 @@ public class SimLib_Random
 	 * @param mean
 	 * @param index
 	 * @return a double with an observation from an m-Erlang distribution 
-	 * with mean “mean” using random-number index "index"
+	 * with mean â€œmeanâ€ using random-number index "index"
 	 */
 	public static double Erlang(int m, double mean, int index) 
 	{
