@@ -1,6 +1,6 @@
 /**
  * Holds all simulations that will be executed
- * @author Matt Halloran
+ * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
  *
  */
 public class Simulator
