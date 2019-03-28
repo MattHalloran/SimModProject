@@ -1,7 +1,7 @@
 /**
  * Will be used to create a log of everything 
  * that happened in the simulation. not used yet
- * @author Matt Halloran
+ * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
  *
  */
 public class Event 
