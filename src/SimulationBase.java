@@ -1,6 +1,6 @@
 /**
  * Base class for all simulation types
- * @author Matt Halloran
+ * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
  *
  */
 public abstract class SimulationBase 
