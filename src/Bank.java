@@ -1,6 +1,6 @@
 /**
  * A simulator for a multi-queue banking system
- * @author Matt Halloran
+ * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
  */
 public class Bank extends SimulationBase
 {
