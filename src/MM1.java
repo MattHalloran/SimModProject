@@ -1,6 +1,6 @@
 /**
  * A simulator for a single-server queuing system
- * @author Matt Halloran
+ * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
  */
 public class MM1 extends SimulationBase
 {
