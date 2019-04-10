@@ -1,9 +1,12 @@
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Base class for all simulation types
  * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
  *
  */
-public abstract class SimulationBase 
+public abstract class SimulationBase implements Cloneable
 {
 	protected SimData data;
 	
@@ -57,6 +60,11 @@ public abstract class SimulationBase
     	this.meanService = meanService;
     }
     
+    public void SetNumTellers(int num)
+    {
+    	numTellers = num;
+    }
+    
     /**
      * Runs a single simulation
      */
@@ -108,6 +116,23 @@ public abstract class SimulationBase
         }
     }
     
+    protected void cloneBase(SimulationBase original)
+    {
+    	numTellers = original.numTellers;
+    	shortestLength = original.shortestLength;
+    	shortestQueue = original.shortestQueue;
+    	maxNumCustomers = original.maxNumCustomers;
+    	lengthDoorsOpen = original.lengthDoorsOpen;
+    	meanInterArrival = original.meanInterArrival;
+    	meanService = original.meanService;
+    	areaNumInQ = original.areaNumInQ;
+    	areaServerStatus = original.areaServerStatus;
+    	totalOfDelays = original.totalOfDelays;
+    	eventCount = original.eventCount;
+    	totalCustomers = original.totalCustomers;
+    	nCustsDelayed = original.nCustsDelayed;
+    }
+    
     /**
      * Runs multiple simulations with different values 
      * for meanInterArrival
@@ -116,13 +141,24 @@ public abstract class SimulationBase
      * @param step
      */
     public void RunInterArrivalSimulations(double from, double to, double step)
-    {
-		while(from <= to)
-		{
-			meanInterArrival = from;
-			RunSimulation(true);
-			from += step;
-		}
+    {	
+		try
+    	{
+        	List<SimulationBase> simulations = new ArrayList<SimulationBase>();
+    		while(from <= to)
+    		{
+    			SimulationBase sim = (SimulationBase)clone();
+    			sim.SetMeanInterArrival(from);
+    			sim.Initialize();
+    			simulations.add(sim);
+    			from += step;
+    		}
+    		Simulator.RunThreaded(simulations);
+    	}
+    	catch(Exception e)
+    	{
+    		System.out.println("Failed to run meanService simulations");
+    	}
     }
     
     /**
@@ -134,11 +170,22 @@ public abstract class SimulationBase
      */
     public void RunServiceSimulations(double from, double to, double step)
     {
-		while(from <= to)
-		{
-			meanService = from;
-			RunSimulation(true);
-			from += step;
-		}
+    	try
+    	{
+        	List<SimulationBase> simulations = new ArrayList<SimulationBase>();
+    		while(from <= to)
+    		{
+    			SimulationBase sim = (SimulationBase)clone();
+    			sim.SetMeanService(from);
+    			sim.Initialize();
+    			simulations.add(sim);
+    			from += step;
+    		}
+    		Simulator.RunThreaded(simulations);
+    	}
+    	catch(Exception e)
+    	{
+    		System.out.println("Failed to run meanService simulations");
+    	}
     }
 }

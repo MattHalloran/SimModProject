@@ -53,5 +53,13 @@ public class MM1 extends SimulationBase
         System.out.printf("Server utilization%15.3f\n\n", serverUtilization);
         System.out.printf("Time simulation ended%12.3f minutes\n", data.GetSimTime());
 	}
+	
+	@Override
+    protected Object clone()
+    {
+        MM1 sim = new MM1();
+        sim.cloneBase(this);
+        return sim;
+    }
 }
 

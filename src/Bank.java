@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A simulator for a multi-queue banking system
  * @author Matt Halloran, Troy Pastirko, Ryan Ciocci
@@ -113,11 +116,30 @@ public class Bank extends SimulationBase
      */
     public void RunTellerSimulations(int from, int to, int step)
     {
-		while(from <= to)
-		{
-			numTellers = from;
-			RunSimulation(true);
-			from += step;
-		}
+		try
+    	{
+        	List<SimulationBase> simulations = new ArrayList<SimulationBase>();
+    		while(from <= to)
+    		{
+    			Bank sim = (Bank)clone();
+    			sim.SetNumTellers(from);
+    			sim.Initialize();
+    			simulations.add(sim);
+    			from += step;
+    		}
+    		Simulator.RunThreaded(simulations);
+    	}
+    	catch(Exception e)
+    	{
+    		System.out.println("Failed to run meanService simulations");
+    	}
+    }
+    
+    @Override
+    protected Object clone()
+    {
+        Bank b = new Bank();
+        b.cloneBase(this);
+        return b;
     }
 }
