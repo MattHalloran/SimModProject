@@ -5,9 +5,9 @@
  */
 public abstract class SimulationBase 
 {
-    protected int minTellers, 
-	 					 maxTellers, 
-	 					 numTellers, 
+	protected SimData data;
+	
+    protected int numTellers, 
 	 					 shortestLength, 
 	 					 shortestQueue,
 	 					 maxNumCustomers = Integer.MAX_VALUE;
@@ -37,16 +37,6 @@ public abstract class SimulationBase
      */
     protected abstract void Report();
     
-    public void SetMinTellers(int minTellers)
-    {
-    	this.minTellers = minTellers;
-    }
-    
-    public void SetMaxTellers(int maxTellers)
-    {
-    	this.maxTellers = maxTellers;
-    }
-    
     public void SetMaxNumCustomers(int maxNumCustomers)
     {
     	this.maxNumCustomers = maxNumCustomers;
@@ -67,21 +57,27 @@ public abstract class SimulationBase
     	this.meanService = meanService;
     }
     
-    public void RunSimulation()
+    /**
+     * Runs a single simulation
+     */
+    public void RunSimulation(boolean printToConsole)
     {
-    	System.out.println("----------------------------------------------------");
     	Initialize();
-    	SimData.SetClosingTime(60 * lengthDoorsOpen);
-    	DisplayStartingData();
+    	data.SetClosingTime(60 * lengthDoorsOpen);
+    	if(printToConsole)
+    	{
+        	System.out.println("----------------------------------------------------");
+    		DisplayStartingData();
+    	}
     	
     	double nextArrivalTime = SimLib_Random.Expon(meanInterArrival),
         		nextDepartureTime = SimLib_Random.Expon(meanService);
         // Run the simulation while more delays are still needed 
-        while(totalCustomers < maxNumCustomers && SimData.StoreOpen() || SimData.CustomersInStore() > 0)
+        while(totalCustomers < maxNumCustomers && data.StoreOpen() || data.CustomersInStore() > 0)
         {
         	//System.out.println(SimData.GetSimTime());
         	//New customers only enter when the store is still open
-        	if(SimData.CustomersInStore() > 0 && (!SimData.StoreOpen() || nextDepartureTime < nextArrivalTime))
+        	if(data.CustomersInStore() > 0 && (!data.StoreOpen() || nextDepartureTime < nextArrivalTime))
         	{
         		nextDepartureTime += SimLib_Random.Expon(meanService);
         		Depart(nextDepartureTime);
@@ -97,15 +93,52 @@ public abstract class SimulationBase
         	else
         		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
         		
-        	areaNumInQ += SimData.CustomersInStore();
-        	areaServerStatus += SimData.CurrentServerUtilization();
+        	areaNumInQ += data.CustomersInStore();
+        	areaServerStatus += data.CurrentServerUtilization();
         	eventCount++;
         }
         
-        System.out.println("----------------------------------------------------");
-		System.out.println("Finished the simulation");
-        Report();
-        System.out.println("----------------------------------------------------");
-        System.out.println("\n\n\n");
+        if(printToConsole)
+        {
+            System.out.println("----------------------------------------------------");
+    		System.out.println("Finished the simulation");
+            Report();
+            System.out.println("----------------------------------------------------");
+            System.out.println("\n\n\n");
+        }
+    }
+    
+    /**
+     * Runs multiple simulations with different values 
+     * for meanInterArrival
+     * @param from
+     * @param to
+     * @param step
+     */
+    public void RunInterArrivalSimulations(double from, double to, double step)
+    {
+		while(from <= to)
+		{
+			meanInterArrival = from;
+			RunSimulation(true);
+			from += step;
+		}
+    }
+    
+    /**
+     * Runs multiple simulations with different values 
+     * for meanService
+     * @param from
+     * @param to
+     * @param step
+     */
+    public void RunServiceSimulations(double from, double to, double step)
+    {
+		while(from <= to)
+		{
+			meanService = from;
+			RunSimulation(true);
+			from += step;
+		}
     }
 }

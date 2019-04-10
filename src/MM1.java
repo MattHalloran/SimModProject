@@ -7,7 +7,7 @@ public class MM1 extends SimulationBase
 	@Override
 	protected void Initialize() 
 	{
-		SimData.Initialize(1,1);
+		data = new SimData(1);
 	}
 
 	@Override
@@ -23,8 +23,8 @@ public class MM1 extends SimulationBase
 	protected void Arrive(double time) 
 	{
 		Customer arrivingCustomer = new Customer(time, 0);
-		SimData.InsertInQueue(arrivingCustomer, SimData.Order.LAST, 0);
-		if(SimData.GetQueueSize(0) > 1)
+		data.InsertInQueue(arrivingCustomer, SimData.Order.LAST, 0);
+		if(data.GetQueueSize(0) > 1)
 		{
 			nCustsDelayed++;
 		}
@@ -33,7 +33,7 @@ public class MM1 extends SimulationBase
 	@Override
 	protected void Depart(double time) 
 	{
-		Customer leavingCustomer = SimData.RemoveFromQueue(SimData.Order.FIRST, 0, time);
+		Customer leavingCustomer = data.RemoveFromQueue(SimData.Order.FIRST, 0, time);
 		totalOfDelays += leavingCustomer.getTimeLeft() - leavingCustomer.GetTimeArrived();
 	}
 
@@ -51,7 +51,7 @@ public class MM1 extends SimulationBase
     	System.out.printf("\n\nAverage delay in queue%11.3f minutes\n\n", averageDelay);
         System.out.printf("Average number in queue%10.3f\n\n", averageNum);
         System.out.printf("Server utilization%15.3f\n\n", serverUtilization);
-        System.out.printf("Time simulation ended%12.3f minutes\n", SimData.GetSimTime());
+        System.out.printf("Time simulation ended%12.3f minutes\n", data.GetSimTime());
 	}
 }
 
