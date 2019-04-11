@@ -28,40 +28,35 @@ public class Bank extends SimulationBase
 	{
 		typeOfJockey = type;
 	}
-	
-	@Override
-	protected void Initialize() 
-	{
-		data = new SimData(numTellers);
-	}
 
 	@Override
 	protected void DisplayStartingData() 
 	{
-        System.out.printf("Multiteller bank with separate queues & jockeying\n\n");
-        System.out.printf("Number of tellers%16d\n\n",numTellers);
-        System.out.printf("Mean interarrival time%11.3f minutes\n\n", meanInterArrival);
-        System.out.printf("Mean service time%16.3f minutes\n\n", meanService);
-        System.out.printf("Bank closes after%16.3f hours\n\n\n\n", lengthDoorsOpen);
+        System.out.printf("Multiteller bank with separate queues & jockeying\n");
+        System.out.printf("Number of tellers%16d\n",numTellers);
+        System.out.printf("Mean interarrival time%11.3f minutes\n", meanInterArrival);
+        System.out.printf("Mean service time%16.3f minutes\n", meanService);
+        System.out.printf("Bank closes after%16.3f hours\n\n", lengthDoorsOpen);
 	}
 
 	@Override
 	protected void Arrive(double time) 
 	{
 		Customer arrivingCustomer = new Customer(time, data.GetShortestLine());
+		if(data.GetQueueSize(arrivingCustomer.GetTeller()) > 0)
+			totalCustomersDelayed++;
 		data.InsertInQueue(arrivingCustomer, SimData.Order.LAST, arrivingCustomer.GetTeller());
-		if(data.GetQueueSize(arrivingCustomer.GetTeller()) > 1)
-		{
-			nCustsDelayed++;
-		}
 	}
 
 	@Override
-	protected void Depart(double time) 
+	protected void Depart(double currentTime) 
 	{
 		int finishingTeller = data.GetDepartingQueue();
-		Customer leavingCustomer = data.RemoveFromQueue(SimData.Order.FIRST, finishingTeller, time);
-		totalOfDelays += leavingCustomer.getTimeLeft() - leavingCustomer.GetTimeArrived();
+		Customer leavingCustomer = data.RemoveFromQueue(SimData.Order.FIRST, finishingTeller, currentTime);
+		//total time the customer spent in the store
+		totalTimeSpent += leavingCustomer.getTimeDeparted() - leavingCustomer.GetTimeArrived();
+		//time the customer spent waiting to be served
+		totalDelayTime += leavingCustomer.getTimeDeparted() - leavingCustomer.getTimeServed();
 		
         // Let a customer from the end of another queue jockey to the end of this queue, if possible. 
         Jockey(leavingCustomer.GetTeller());
@@ -90,21 +85,8 @@ public class Bank extends SimulationBase
     }
 
 	@Override
-	protected void Report() 
+	protected void ReportAdditionalInfo() 
 	{
-		System.out.println("Finished the simulation");
-    	double averageDelay = 0, averageNum = 0, serverUtilization = 0;
-    	if(nCustsDelayed != 0)
-    		averageDelay = totalOfDelays / nCustsDelayed;
-    	if(eventCount > 0)
-    	{
-    		averageNum = areaNumInQ / eventCount;
-    		serverUtilization = areaServerStatus / eventCount;
-    	}
-    	System.out.printf("\n\nAverage delay in queue%11.3f minutes\n\n", averageDelay);
-        System.out.printf("Average number in queue%10.3f\n\n", averageNum);
-        System.out.printf("Server utilization%15.3f\n\n", serverUtilization);
-        System.out.printf("Time simulation ended%12.3f minutes\n", data.GetSimTime());
 	}
 	
     /**
@@ -138,8 +120,12 @@ public class Bank extends SimulationBase
     @Override
     protected Object clone()
     {
-        Bank b = new Bank();
-        b.cloneBase(this);
+        Bank b =  new Bank();
+        b.meanInterArrival = meanInterArrival;
+        b.meanService = meanService;
+        b.lengthDoorsOpen = lengthDoorsOpen;
+        b.maxNumCustomers = maxNumCustomers;
+        b.numTellers = numTellers;
         return b;
     }
 }

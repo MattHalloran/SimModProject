@@ -6,7 +6,8 @@
 public class Customer
 {
     private double timeArrived;
-    private double timeLeft;
+    private double timeDeparted;
+    private double timeServed;
     private int    teller;
 
     /**
@@ -24,7 +25,7 @@ public class Customer
     public Customer(double arrivalTime)
     {
         this.timeArrived = arrivalTime;
-        this.teller       = 0;
+        this.teller      = 0;
     }
     
     /**
@@ -51,13 +52,23 @@ public class Customer
         return teller;
     }
 
-	public double getTimeLeft() 
+	public double getTimeDeparted() 
 	{
-		return timeLeft;
+		return timeDeparted;
 	}
 
-	public void setTimeLeft(double timeLeft)
+	public void setTimeDeparted(double timeDeparted)
 	{
-		this.timeLeft = timeLeft;
+		this.timeDeparted = timeDeparted;
+	}
+	
+	public double getTimeServed()
+	{
+		return timeServed;
+	}
+	
+	public void setTimeServed(double timeServed)
+	{
+		this.timeServed = timeServed;
 	}
 }

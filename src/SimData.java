@@ -102,21 +102,24 @@ public class SimData
 
 		customersInStore--;
 		
+		LinkedList<Customer> queue = queueLists.get(qNum);
 		Customer leavingCustomer = new Customer();
 		if(order == Order.FIRST)
 		{
-			leavingCustomer = queueLists.get(qNum).removeFirst();
+			leavingCustomer = queue.removeFirst();
+			if(!queue.isEmpty())
+				queue.get(0).setTimeServed(time);
 		}
 		else if(order == Order.LAST)
 		{
-			leavingCustomer = queueLists.get(qNum).removeLast();
+			leavingCustomer = queue.removeLast();
 		}
 		else
 		{
 			System.out.println("Invalid order number passed to Event.RemoveFromQueue()");
 		}
 		
-    	leavingCustomer.setTimeLeft(time);
+    	leavingCustomer.setTimeDeparted(time);
     	currentTime = time;
     	return leavingCustomer;
     }

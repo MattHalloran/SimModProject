@@ -11,8 +11,8 @@ public abstract class SimulationBase implements Cloneable
 	protected SimData data;
 	
     protected int numTellers, 
-	 					 shortestLength, 
-	 					 shortestQueue,
+	 					 shortestNumWaiting = Integer.MAX_VALUE,
+	 					 longestNumWaiting,
 	 					 maxNumCustomers = Integer.MAX_VALUE;
     protected double lengthDoorsOpen; //in hours
 
@@ -20,12 +20,12 @@ public abstract class SimulationBase implements Cloneable
 
     protected double areaNumInQ;
     protected double areaServerStatus;
-    protected double totalOfDelays;
-    protected int eventCount;
-    protected int totalCustomers;
-    protected int nCustsDelayed;
+    protected double totalDelayTime;
+    protected double totalTimeSpent;
+    protected int totalEventCount;
+    protected int totalCustomersServed;
+    protected int totalCustomersDelayed;
     
-    protected abstract void Initialize();
     protected abstract void DisplayStartingData();
     /**
      * Updates queues and statistics for a customer arriving
@@ -36,9 +36,14 @@ public abstract class SimulationBase implements Cloneable
      */
     protected abstract void Depart(double time);
     /**
-     * Displays simulation data
+     * Displays simulation data that is not shared with the base
      */
-    protected abstract void Report();
+    protected abstract void ReportAdditionalInfo();
+    
+    protected void Initialize()
+    {
+    	data = new SimData(numTellers);
+    }
     
     public void SetMaxNumCustomers(int maxNumCustomers)
     {
@@ -79,58 +84,87 @@ public abstract class SimulationBase implements Cloneable
     	}
     	
     	double nextArrivalTime = SimLib_Random.Expon(meanInterArrival),
-        		nextDepartureTime = SimLib_Random.Expon(meanService);
+        		nextDepartureTime = SimLib_Random.Expon(meanService/numTellers),
+        		lastEventTime = 0;
         // Run the simulation while more delays are still needed 
-        while(totalCustomers < maxNumCustomers && data.StoreOpen() || data.CustomersInStore() > 0)
+        while(totalCustomersServed < maxNumCustomers && (data.StoreOpen() || data.CustomersInStore() > 0))
         {
-        	//System.out.println(SimData.GetSimTime());
         	//New customers only enter when the store is still open
-        	if(data.CustomersInStore() > 0 && (!data.StoreOpen() || nextDepartureTime < nextArrivalTime))
+        	if(data.CustomersInStore() > 0 && (!data.StoreOpen() || nextDepartureTime <= nextArrivalTime))
         	{
-        		nextDepartureTime += SimLib_Random.Expon(meanService);
         		Depart(nextDepartureTime);
+        		UpdateAreaStatistics(nextDepartureTime - lastEventTime);
+        		nextDepartureTime += SimLib_Random.Expon(meanService/numTellers);
+        		if(data.CustomersInStore() < shortestNumWaiting)
+        			shortestNumWaiting = data.CustomersInStore();
         	}
-        	else if(nextArrivalTime < nextDepartureTime)
-        	{
-        		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
-        		Arrive(nextArrivalTime);
-        		totalCustomers++;
-        	}
-        	else if(nextDepartureTime <= nextArrivalTime)
-        		nextDepartureTime += nextDepartureTime += SimLib_Random.Expon(meanService);
         	else
+        	{
+        		Arrive(nextArrivalTime);
+        		UpdateAreaStatistics(nextArrivalTime - lastEventTime);
         		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
+        		totalCustomersServed++;
+        		if(data.CustomersInStore() > longestNumWaiting)
+        			longestNumWaiting = data.CustomersInStore();
+        	}
         		
-        	areaNumInQ += data.CustomersInStore();
-        	areaServerStatus += data.CurrentServerUtilization();
-        	eventCount++;
+        	lastEventTime = data.GetSimTime();
+        	totalEventCount++;
         }
         
         if(printToConsole)
         {
-            System.out.println("----------------------------------------------------");
-    		System.out.println("Finished the simulation");
             Report();
-            System.out.println("----------------------------------------------------");
-            System.out.println("\n\n\n");
         }
     }
     
-    protected void cloneBase(SimulationBase original)
+    protected void Report()
     {
-    	numTellers = original.numTellers;
-    	shortestLength = original.shortestLength;
-    	shortestQueue = original.shortestQueue;
-    	maxNumCustomers = original.maxNumCustomers;
-    	lengthDoorsOpen = original.lengthDoorsOpen;
-    	meanInterArrival = original.meanInterArrival;
-    	meanService = original.meanService;
-    	areaNumInQ = original.areaNumInQ;
-    	areaServerStatus = original.areaServerStatus;
-    	totalOfDelays = original.totalOfDelays;
-    	eventCount = original.eventCount;
-    	totalCustomers = original.totalCustomers;
-    	nCustsDelayed = original.nCustsDelayed;
+    	System.out.println("----------------------------------------------------");
+		System.out.println("Finished the simulation");
+		ReportBaseInfo();
+        ReportAdditionalInfo();
+        System.out.println("----------------------------------------------------");
+        System.out.println("\n\n\n");
+    }
+    
+    private void ReportBaseInfo()
+    {
+    	double averageDelay = 0, averageNum = 0, serverUtilization = 0, averageTimeSpent = 0;
+    	if(totalCustomersDelayed != 0)
+    		averageDelay = totalDelayTime / totalCustomersDelayed;
+    	if(totalEventCount > 0)
+    	{
+    		averageNum = areaNumInQ / data.GetSimTime();
+    		serverUtilization = areaServerStatus / data.GetSimTime();
+    		averageTimeSpent = totalTimeSpent / totalCustomersServed;
+    	}
+    	System.out.printf("\nAverage delay in queue%11.3f minutes\n", averageDelay);
+        System.out.printf("Average number in queue%10.3f\n", averageNum);
+        System.out.printf("Server utilization%15.3f\n", serverUtilization);
+        System.out.println("Average time spent in store: " + averageTimeSpent);
+        System.out.printf("Time simulation ended%12.3f minutes\n", data.GetSimTime());
+    }
+    
+    private void UpdateAreaStatistics(double timeBetweenEvents)
+    {
+    	//System.out.println(timeBetweenEvents + " " + data.CustomersInStore() + " " + data.CurrentServerUtilization());
+    	areaNumInQ += data.CustomersInStore() * timeBetweenEvents;
+		areaServerStatus += data.CurrentServerUtilization() * timeBetweenEvents;
+		totalEventCount++;
+    }
+    
+    protected void reset()
+    {
+    	data = new SimData(numTellers);
+    	shortestNumWaiting = 0;
+    	longestNumWaiting = 0;
+    	areaNumInQ = 0;
+    	areaServerStatus = 0;
+    	totalDelayTime = 0;
+    	totalEventCount = 0;
+    	totalCustomersServed = 0;
+    	totalCustomersDelayed = 0;
     }
     
     /**
