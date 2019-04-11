@@ -17,18 +17,21 @@ public class SimData
     private double                currentTime;
     private double				 closingTime;
     private int					 customersInStore;
-    private LinkedList<Event>  eventList; //A list of all logged events
     private ArrayList<LinkedList<Customer>> queueLists; //Stores each teller's list of customers
+    private ArrayList<Double> tellerTimes; //Stores the time that the teller's current customer started being served
     
     public SimData(int tellers)
     {        
     	numTellers = tellers;
     	customersInStore = 0;
     	currentTime = 0;
-    	eventList = new LinkedList<Event>();
+    	tellerTimes = new ArrayList<>();
     	queueLists = new ArrayList<LinkedList<Customer>>();
     	for(int i = 0; i < tellers; i++)
+    	{
     		queueLists.add(new LinkedList<Customer>());
+    		tellerTimes.add(0.0);
+    	}
     }
     
     public int CustomersInStore()
@@ -51,11 +54,6 @@ public class SimData
     	return closingTime;
     }
     
-    public void EventSchedule(Event ev)
-    {
-    	eventList.add(ev);
-    }
-    
     /**
      * Adds an event to a teller's queue
      * 	[Order.FIRST] = Adds event to start of queue
@@ -67,18 +65,17 @@ public class SimData
      */
     public void InsertInQueue(Customer customer, Order order, int qNum)//TODO
     {
-    	currentTime = customer.GetTimeArrived();
+    	currentTime = customer.getTimeArrived();
     	customersInStore++;
     	LinkedList<Customer> queue = queueLists.get(qNum);
+		if(queue.size() == 0)
+			tellerTimes.set(qNum, currentTime);
     	if(order == Order.FIRST)
     	{
-    		customer.setTimeServed(customer.GetTimeArrived());
     		queue.addFirst(customer);
     	}
     	else if(order == Order.LAST)
     	{
-    		if(queue.size() == 0)
-    			customer.setTimeServed(customer.GetTimeArrived());
     		queue.addLast(customer);
     	}
     	else
@@ -112,8 +109,6 @@ public class SimData
 		if(order == Order.FIRST)
 		{
 			leavingCustomer = queue.removeFirst();
-			if(!queue.isEmpty())
-				queue.get(0).setTimeServed(time);
 		}
 		else if(order == Order.LAST)
 		{
@@ -124,18 +119,18 @@ public class SimData
 			System.out.println("Invalid order number passed to Event.RemoveFromQueue()");
 		}
 		
+		leavingCustomer.setTimeServed(Math.max(0, tellerTimes.get(qNum)));
     	leavingCustomer.setTimeDeparted(time);
+    	
+		if(order == Order.FIRST && queue.size() > 0)
+			tellerTimes.set(qNum, currentTime);
+		
     	return leavingCustomer;
     }
     
     public double getCurrentTime()
     {
         return currentTime;
-    }
-    
-    public Event.EventType GetNextEventType()
-    {
-        return eventList.get(0).getType();
     }
     
     public int GetQueueSize(int qNum)
@@ -149,24 +144,6 @@ public class SimData
     	}
     	return queueLists.get(qNum).size();
     }
-    
-    /**
-     * Cancels the first event that matches the event type
-     * @param eventType
-     */
-	public void EventCancel(Event.EventType eventType) 
-	{
-		Iterator<Event> itty = eventList.iterator();
-	    while (itty.hasNext())
-		{
-			Event ev = itty.next();
-			if(ev.getType() == eventType)
-			{
-				itty.remove();
-				return;
-			}
-		}
-	}
 	
 	/**
 	 * Finds the shortest queue that has a teller

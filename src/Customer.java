@@ -37,7 +37,7 @@ public class Customer
         this.teller       = teller;
     }
 
-    public double GetTimeArrived()
+    public double getTimeArrived()
     {
         return timeArrived;
     }

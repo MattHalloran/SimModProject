@@ -4,7 +4,11 @@
  */
 public class MM1 extends SimulationBase
 {
-
+	public MM1()
+	{
+		numTellers = 1;
+	}
+	
 	@Override
 	protected void DisplayStartingData()
 	{
@@ -28,9 +32,9 @@ public class MM1 extends SimulationBase
 	{
 		Customer leavingCustomer = data.RemoveFromQueue(SimData.Order.FIRST, 0, time);
 		//total time the customer spent in the store
-		totalTimeSpent += leavingCustomer.getTimeDeparted() - leavingCustomer.GetTimeArrived();
+		totalTimeSpent += leavingCustomer.getTimeDeparted() - leavingCustomer.getTimeArrived();
 		//time the customer spent waiting to be served
-		totalDelayTime += leavingCustomer.getTimeDeparted() - leavingCustomer.getTimeServed();
+		totalDelayTime += leavingCustomer.getTimeServed() - leavingCustomer.getTimeArrived();
 	}
 
 	@Override

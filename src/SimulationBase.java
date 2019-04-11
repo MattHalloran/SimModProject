@@ -143,6 +143,7 @@ public abstract class SimulationBase implements Cloneable
     		serverUtilization = areaServerStatus / data.getCurrentTime();
     		averageTimeSpent = totalTimeSpent / totalCustomersServed;
     	}
+    	
     	System.out.printf("\nAverage delay in queue: %10.4f minutes\n", averageDelay);
         System.out.printf("Average number in queue: %10.4f\n", averageNum);
         System.out.printf("Server utilization: %10.4f%%\n", serverUtilization);

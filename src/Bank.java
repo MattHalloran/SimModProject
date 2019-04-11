@@ -54,9 +54,10 @@ public class Bank extends SimulationBase
 		int finishingTeller = data.GetDepartingQueue();
 		Customer leavingCustomer = data.RemoveFromQueue(SimData.Order.FIRST, finishingTeller, currentTime);
 		//total time the customer spent in the store
-		totalTimeSpent += leavingCustomer.getTimeDeparted() - leavingCustomer.GetTimeArrived();
+		totalTimeSpent += leavingCustomer.getTimeDeparted() - leavingCustomer.getTimeArrived();
 		//time the customer spent waiting to be served
-		totalDelayTime += leavingCustomer.getTimeDeparted() - leavingCustomer.getTimeServed();
+		totalDelayTime += leavingCustomer.getTimeServed() - leavingCustomer.getTimeArrived();
+	    //System.out.println(leavingCustomer.getTimeArrived() + " " + leavingCustomer.getTimeServed() + " " + leavingCustomer.getTimeDeparted());
 		
         // Let a customer from the end of another queue jockey to the end of this queue, if possible. 
         Jockey(leavingCustomer.GetTeller());

@@ -14,7 +14,6 @@ public class Simulator
 		bank.SetMeanInterArrival(0.8);
 		bank.SetMeanService(4.5);
 		bank.RunTellerSimulations(4, 7, 1);
-		//bank.RunTellerSimulations(4, 7, 1);
 		
 //		MM1 single = new MM1();
 //		single.SetMeanInterArrival(3.0);
