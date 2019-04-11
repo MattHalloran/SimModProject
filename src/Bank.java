@@ -7,27 +7,27 @@ import java.util.List;
  */
 public class Bank extends SimulationBase
 {
-	/**
-	 * The jockeying method used in the simulation
-	 * LARGEST - Last customer from largest line moves in, if that line is larger than 
-	 *
-	 */
-	public static enum JockeyType {LARGEST, LEFT, RIGHT};
-	
-	/**
-	 * Determines what type of jockeying method to use
-	 */
-	public JockeyType typeOfJockey;
-	
-	public JockeyType GetJockeyType()
-	{
-		return typeOfJockey;
-	}
-	
-	public void SetJockeyType(JockeyType type)
-	{
-		typeOfJockey = type;
-	}
+//	/**
+//	 * The jockeying method used in the simulation
+//	 * LARGEST - Last customer from largest line moves in, if that line is larger than 
+//	 *
+//	 */
+//	public static enum JockeyType {LARGEST, LEFT, RIGHT};
+//	
+//	/**
+//	 * Determines what type of jockeying method to use
+//	 */
+//	public JockeyType typeOfJockey;
+//	
+//	public JockeyType GetJockeyType()
+//	{
+//		return typeOfJockey;
+//	}
+//	
+//	public void SetJockeyType(JockeyType type)
+//	{
+//		typeOfJockey = type;
+//	}
 
 	@Override
 	protected void DisplayStartingData() 

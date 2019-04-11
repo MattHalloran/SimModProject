@@ -11,8 +11,8 @@ public abstract class SimulationBase implements Cloneable
 	protected SimData data;
 	
     protected int numTellers, 
-	 					 shortestNumWaiting = Integer.MAX_VALUE,
-	 					 longestNumWaiting,
+	 					 shortestNumInStore = Integer.MAX_VALUE,
+	 					 longestNumInStore,
 	 					 maxNumCustomers = Integer.MAX_VALUE;
     protected double lengthDoorsOpen; //in hours
 
@@ -89,26 +89,30 @@ public abstract class SimulationBase implements Cloneable
         // Run the simulation while more delays are still needed 
         while(totalCustomersServed < maxNumCustomers && (data.StoreOpen() || data.CustomersInStore() > 0))
         {
+        	//System.out.println(SimData.GetSimTime());
         	//New customers only enter when the store is still open
         	if(data.CustomersInStore() > 0 && (!data.StoreOpen() || nextDepartureTime <= nextArrivalTime))
         	{
         		Depart(nextDepartureTime);
         		UpdateAreaStatistics(nextDepartureTime - lastEventTime);
-        		nextDepartureTime += SimLib_Random.Expon(meanService/numTellers);
-        		if(data.CustomersInStore() < shortestNumWaiting)
-        			shortestNumWaiting = data.CustomersInStore();
+        		if(data.CustomersInStore() < shortestNumInStore)
+        			shortestNumInStore = data.CustomersInStore();
         	}
         	else
         	{
         		Arrive(nextArrivalTime);
         		UpdateAreaStatistics(nextArrivalTime - lastEventTime);
-        		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
         		totalCustomersServed++;
-        		if(data.CustomersInStore() > longestNumWaiting)
-        			longestNumWaiting = data.CustomersInStore();
+        		if(data.CustomersInStore() > longestNumInStore)
+        			longestNumInStore = data.CustomersInStore();
         	}
+        	
+        	if(nextDepartureTime <= data.getCurrentTime())
+        		nextDepartureTime += SimLib_Random.Expon(meanService/numTellers);
+        	if(nextArrivalTime <= data.getCurrentTime())
+        		nextArrivalTime += SimLib_Random.Expon(meanInterArrival);
         		
-        	lastEventTime = data.GetSimTime();
+        	lastEventTime = data.getCurrentTime();
         	totalEventCount++;
         }
         
@@ -135,15 +139,15 @@ public abstract class SimulationBase implements Cloneable
     		averageDelay = totalDelayTime / totalCustomersDelayed;
     	if(totalEventCount > 0)
     	{
-    		averageNum = areaNumInQ / data.GetSimTime();
-    		serverUtilization = areaServerStatus / data.GetSimTime();
+    		averageNum = areaNumInQ / data.getCurrentTime();
+    		serverUtilization = areaServerStatus / data.getCurrentTime();
     		averageTimeSpent = totalTimeSpent / totalCustomersServed;
     	}
-    	System.out.printf("\nAverage delay in queue%11.3f minutes\n", averageDelay);
-        System.out.printf("Average number in queue%10.3f\n", averageNum);
-        System.out.printf("Server utilization%15.3f\n", serverUtilization);
-        System.out.println("Average time spent in store: " + averageTimeSpent);
-        System.out.printf("Time simulation ended%12.3f minutes\n", data.GetSimTime());
+    	System.out.printf("\nAverage delay in queue: %10.4f minutes\n", averageDelay);
+        System.out.printf("Average number in queue: %10.4f\n", averageNum);
+        System.out.printf("Server utilization: %10.4f%%\n", serverUtilization);
+        System.out.printf("Average time spent in store: %10.4f minutes\n", averageTimeSpent);
+        System.out.printf("Time simulation ended: %10.4f minutes\n", data.getCurrentTime());
     }
     
     private void UpdateAreaStatistics(double timeBetweenEvents)
@@ -157,8 +161,8 @@ public abstract class SimulationBase implements Cloneable
     protected void reset()
     {
     	data = new SimData(numTellers);
-    	shortestNumWaiting = 0;
-    	longestNumWaiting = 0;
+    	shortestNumInStore = 0;
+    	longestNumInStore = 0;
     	areaNumInQ = 0;
     	areaServerStatus = 0;
     	totalDelayTime = 0;

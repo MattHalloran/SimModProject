@@ -69,13 +69,17 @@ public class SimData
     {
     	currentTime = customer.GetTimeArrived();
     	customersInStore++;
+    	LinkedList<Customer> queue = queueLists.get(qNum);
     	if(order == Order.FIRST)
     	{
-    		queueLists.get(qNum).addFirst(customer);
+    		customer.setTimeServed(customer.GetTimeArrived());
+    		queue.addFirst(customer);
     	}
     	else if(order == Order.LAST)
     	{
-    		queueLists.get(qNum).addLast(customer);
+    		if(queue.size() == 0)
+    			customer.setTimeServed(customer.GetTimeArrived());
+    		queue.addLast(customer);
     	}
     	else
     	{
@@ -100,6 +104,7 @@ public class SimData
 			System.exit(1);
 		}
 
+    	currentTime = time;
 		customersInStore--;
 		
 		LinkedList<Customer> queue = queueLists.get(qNum);
@@ -120,11 +125,10 @@ public class SimData
 		}
 		
     	leavingCustomer.setTimeDeparted(time);
-    	currentTime = time;
     	return leavingCustomer;
     }
     
-    public double GetSimTime()
+    public double getCurrentTime()
     {
         return currentTime;
     }

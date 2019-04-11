@@ -49,6 +49,7 @@ public class Simulator
 		}
 		for(SimulationBase sim : simulations)
 		{
+			sim.DisplayStartingData();
 			sim.Report();
 		}
 	}
